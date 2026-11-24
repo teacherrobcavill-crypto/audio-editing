@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Component 4 Lab: Vocal Pitch Correction (Flex Pitch &amp; Auto-Tune)</title>
+<style>
+  :root {
+    --bg: #f8fafc; --surface: #ffffff; --surface-alt: #f1f5f9;
+    --ink: #0f172a; --muted: #475569; --border: #e2e8f0;
+    --accent: #7c3aed; --good: #16a34a; --bad: #dc2626;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 14px rgba(15, 23, 42, 0.04);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.55; }
+  .container { max-width: 1120px; margin: 0 auto; padding: 24px 20px 64px; }
+  header.hero {
+    background: linear-gradient(135deg, #0f172a 0%, #312e81 55%, #7c3aed 100%);
+    color: #fff; border-radius: 16px; padding: 28px 32px; margin-bottom: 24px; box-shadow: var(--shadow);
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px;
+  }
+  .hero-badge { display: inline-flex; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 10px; }
+  header.hero h1 { margin: 0 0 8px; font-size: 28px; line-height: 1.2; }
+  header.hero p { margin: 0; color: #cbd5e1; max-width: 700px; font-size: 15px; }
+  .btn { border: 1px solid var(--border); background: var(--surface); color: var(--ink); padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn:hover { background: var(--surface-alt); }
+  .btn-primary { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+  .btn-success { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .btn-ghost { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.28); color: #fff; }
+  .btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+  section.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 26px; margin-bottom: 24px; box-shadow: var(--shadow); }
+  section.card h2 { margin: 0 0 6px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+  .section-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: #0f172a; color: #fff; font-size: 13px; font-weight: 700; }
+  p.lead { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+  .lab-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 880px) { .lab-grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .panel h3 { margin: 0 0 10px; font-size: 15px; }
+  canvas.scope { width: 100%; height: 220px; background: #0f172a; border-radius: 8px; display: block; margin-bottom: 12px; }
+  .control-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; font-size: 13px; }
+  .control-row label { display: flex; justify-content: space-between; font-weight: 600; }
+  .control-row input[type="range"] { width: 100%; accent-color: #7c3aed; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .callout { padding: 12px 14px; border-radius: 8px; border-left: 4px solid #16a34a; background: #f0fdf4; font-size: 13.5px; margin-top: 12px; }
+  .callout.warn { border-left-color: #d97706; background: #fffbeb; }
+  .callout.bad { border-left-color: #dc2626; background: #fef2f2; }
+  .cards-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; }
+  .mini-card { border: 1px solid var(--border); border-radius: 10px; padding: 15px; background: var(--surface-alt); }
+  .mini-card h3 { margin: 0 0 6px; font-size: 15px; }
+  .mini-card p { margin: 0; font-size: 13.5px; color: var(--muted); }
+  details.markscheme { margin-top: 10px; background: var(--surface-alt); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; }
+  details.markscheme summary { cursor: pointer; font-weight: 700; color: #6d28d9; }
+  code { background: #e2e8f0; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="hero">
+    <div>
+      <div class="hero-badge">Component 4 Scenario 5 &bull; Flex Pitch / Melodyne / Auto-Tune</div>
+      <h1>Vocal Pitch Correction &amp; Practical Pitfalls</h1>
+      <p>Explore how pitch centre, retune speed, vibrato drift, and formant preservation affect a recorded vocal &mdash; and learn why over-tuning ruins natural performances.</p>
+    </div>
+    <div>
+      <a class="btn btn-ghost" href="/">&larr; Main Audio Editing Hub</a>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="section-num">1</span> Interactive Flex Pitch / Auto-Tune Lab</h2>
+    <p class="lead">The 4-note phrase (<code>C4 &rarr; D4 &rarr; E4 &rarr; G4</code>) has a <strong>-35 cents flat E4</strong>, a natural scoop into D4, and vibrato on G4. Try both tasks below!</p>
+
+    <div class="pill-row" style="margin-bottom:14px;">
+      <button class="btn active" id="taskA" onclick="setTask('A')">Task A: Natural Corrective Tuning</button>
+      <button class="btn" id="taskB" onclick="setTask('B')">Task B: +4 Semitone Harmony (No Chipmunk)</button>
+      <button class="btn" onclick="presetHardTune()">Demo: Hard-Tune Pop Effect</button>
+    </div>
+
+    <div class="lab-grid">
+      <div class="panel">
+        <h3>Pitch-Trace Piano Roll (Grey = Original, Cyan = Corrected)</h3>
+        <canvas id="pitchCanvas" class="scope" width="560" height="220"></canvas>
+        <div class="pill-row">
+          <button class="btn btn-primary" onclick="playVocal(true)">Play Corrected Vocal</button>
+          <button class="btn" onclick="playVocal(false)">Play Original (Untuned)</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Pitch Correction Controls</h3>
+        <div class="control-row">
+          <label><span>Pitch Correction (Retune Speed)</span><span id="lblRetune">0% (Off)</span></label>
+          <input type="range" id="rngRetune" min="0" max="100" value="0" oninput="updatePitch()" />
+        </div>
+        <div class="control-row">
+          <label><span>Vibrato / Pitch Drift Retained</span><span id="lblDrift">100% (Natural)</span></label>
+          <input type="range" id="rngDrift" min="0" max="100" value="100" oninput="updatePitch()" />
+        </div>
+        <div class="control-row">
+          <label><span>Transpose (Semitones)</span><span id="lblTrans">0 st</span></label>
+          <input type="range" id="rngTrans" min="-5" max="5" step="1" value="0" oninput="updatePitch()" />
+        </div>
+        <div class="control-row">
+          <label><span>Formant Preservation</span><span id="lblFormant">ON (Natural Timbre)</span></label>
+          <button class="btn active" id="btnFormant" onclick="toggleFormant()" style="align-self:flex-start;">Formant Preservation: ON</button>
+        </div>
+        <div class="pill-row">
+          <button class="btn btn-success" onclick="checkPitchTask()">Check Task</button>
+        </div>
+        <div id="pitchFeedback" class="callout warn">
+          <strong>Task A Goal:</strong> Fix the flat <code>E4</code> with moderate Retune Speed (<code>45&ndash;75%</code>) while keeping Vibrato/Drift above <code>55%</code> so the vocal stays human.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="section-num">2</span> Theory &amp; Practical Problems of Retuning Vocals</h2>
+    <p class="lead">Examiners test both how pitch correction works (AoS 2) and how to avoid classic production mistakes (AoS 1 / AO3).</p>
+
+    <div class="cards-2">
+      <div class="mini-card">
+        <h3>1. Robotic / Stair-Stepping Artifacts</h3>
+        <p>Setting <strong>Retune Speed</strong> to 100% (0 ms) and <strong>Pitch Drift</strong> to 0% strips away natural pitch scoops, glides, and vibrato. The vocal snaps rigidly to semitones, creating an artificial, robotic timbre.</p>
+      </div>
+      <div class="mini-card">
+        <h3>2. Formant Shift ("Chipmunk" / "Monster")</h3>
+        <p>When transposing a vocal by 3+ semitones (e.g. creating harmonies), shifting pitch without <strong>Formant Preservation</strong> scales the vocal tract resonances upward/downward, changing the singer's perceived throat size.</p>
+      </div>
+      <div class="mini-card">
+        <h3>3. Sibilance &amp; Breath Warbling</h3>
+        <p>Unvoiced consonants (<code>s</code>, <code>t</code>, <code>f</code>, <code>sh</code>) and breaths contain broadband noise with no clear fundamental pitch. Letting Flex Pitch/Melodyne track them causes metallic warbling &mdash; always split and bypass sibilants/breaths.</p>
+      </div>
+      <div class="mini-card">
+        <h3>4. Monophonic Limitation &amp; Scale Lock</h3>
+        <p>Standard pitch trackers require a <strong>monophonic</strong> signal (single note at a time); reverb tails or bleed can confuse pitch detection. Always set the correct key/scale so passing notes aren't pulled out of key.</p>
+      </div>
+    </div>
+
+    <details class="markscheme" style="margin-top:16px;">
+      <summary>Component 4 Exam Practice (5 Marks): A student tunes a backing vocal +4 semitones and sets Drift to 0%. Evaluate the result.</summary>
+      <ul>
+        <li>With Drift at 0% and fast retune, natural vibrato and pitch transitions are removed, making the vocal sound robotic/unnatural <strong>(1)</strong>.</li>
+        <li>If Formant Preservation is off, a +4 semitone shift raises vocal tract formants, creating an unnatural "chipmunk" timbre <strong>(1)</strong>; enabling Formant Preservation maintains natural character <strong>(1)</strong>.</li>
+        <li>Unvoiced consonants/sibilants may exhibit metallic artifacts if not excluded from pitch processing <strong>(1)</strong>.</li>
+        <li>Recommend moderate retune speed, retaining natural drift/vibrato, and verifying harmonic blend against the lead vocal <strong>(1)</strong>.</li>
+      </ul>
+    </details>
+  </section>
+</div>
+
+<script>
+let task = 'A';
+let formantOn = true;
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function setTask(t) {
+  task = t;
+  document.getElementById('taskA').classList.toggle('active', t === 'A');
+  document.getElementById('taskB').classList.toggle('active', t === 'B');
+  document.getElementById('rngRetune').value = 0;
+  document.getElementById('rngDrift').value = 100;
+  document.getElementById('rngTrans').value = t === 'B' ? 4 : 0;
+  formantOn = t === 'A';
+  updateFormantBtn();
+  const box = document.getElementById('pitchFeedback');
+  box.className = 'callout warn';
+  box.innerHTML = t === 'A'
+    ? '<strong>Task A Goal:</strong> Fix the flat <code>E4</code> with moderate Retune Speed (<code>45&ndash;75%</code>) while keeping Vibrato/Drift above <code>55%</code>.'
+    : '<strong>Task B Goal:</strong> Keep Transpose at <code>+4 st</code>, tune the flat <code>E4</code>, and enable <strong>Formant Preservation</strong> to stop the chipmunk effect!';
+  updatePitch();
+}
+
+function presetHardTune() {
+  document.getElementById('rngRetune').value = 100;
+  document.getElementById('rngDrift').value = 0;
+  document.getElementById('rngTrans').value = 0;
+  formantOn = true;
+  updateFormantBtn();
+  updatePitch();
+}
+
+function toggleFormant() {
+  formantOn = !formantOn;
+  updateFormantBtn();
+  updatePitch();
+}
+
+function updateFormantBtn() {
+  const b = document.getElementById('btnFormant');
+  b.textContent = `Formant Preservation: ${formantOn ? 'ON' : 'OFF'}`;
+  b.classList.toggle('active', formantOn);
+  document.getElementById('lblFormant').textContent = formantOn ? 'ON (Natural Timbre)' : 'OFF (Shifted Formants)';
+}
+
+// 4 notes in MIDI: C4=60, D4=62, E4=64, G4=67
+function originalMidi(tNorm) {
+  // tNorm in [0, 1] across 4 equal notes
+  const n = Math.min(3, Math.floor(tNorm * 4));
+  const local = (tNorm * 4) - n;
+  if (n === 0) return 60;
+  if (n === 1) return 62 - 0.6 * Math.exp(-local * 8); // scoop up into D4
+  if (n === 2) return 64 - 0.35; // -35 cents flat E4!
+  return 67 + 0.28 * Math.sin(local * Math.PI * 6); // vibrato on G4
+}
+
+function targetMidi(tNorm) {
+  const n = Math.min(3, Math.floor(tNorm * 4));
+  return [60, 62, 64, 67][n];
+}
+
+function correctedMidi(tNorm, retune, drift, trans) {
+  const orig = originalMidi(tNorm);
+  const tgt = targetMidi(tNorm);
+  // Separate static offset + micro-variation
+  const baseTgt = tgt;
+  const staticErr = (orig - baseTgt);
+  // Retune pulls towards target; drift scales vibrato/scoop
+  const isModulated = Math.min(3, Math.floor(tNorm * 4)) === 1 || Math.min(3, Math.floor(tNorm * 4)) === 3;
+  const corrected = isModulated
+    ? baseTgt + staticErr * (drift / 100) * (1 - 0.7 * (retune / 100))
+    : baseTgt + staticErr * (1 - retune / 100);
+  return corrected + trans;
+}
+
+function updatePitch() {
+  const retune = Number(document.getElementById('rngRetune').value);
+  const drift = Number(document.getElementById('rngDrift').value);
+  const trans = Number(document.getElementById('rngTrans').value);
+  document.getElementById('lblRetune').textContent = `${retune}%`;
+  document.getElementById('lblDrift').textContent = `${drift}%`;
+  document.getElementById('lblTrans').textContent = `${trans >= 0 ? '+' : ''}${trans} st`;
+
+  const canvas = document.getElementById('pitchCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const minM = 55, maxM = 74;
+  const yForM = (m) => h - ((m - minM) / (maxM - minM)) * (h - 24) - 12;
+
+  // Grid lines for C4, D4, E4, G4
+  [60, 62, 64, 67, 71].forEach((m, i) => {
+    const y = yForM(m);
+    ctx.strokeStyle = '#334155'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    ctx.fillStyle = '#64748b'; ctx.font = '11px sans-serif';
+    ctx.fillText(['C4','D4','E4','G4','B4'][i], 6, y - 3);
+  });
+
+  // Original trace
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.55)'; ctx.lineWidth = 2; ctx.setLineDash([4,4]);
+  ctx.beginPath();
+  for (let x = 0; x < w; x++) {
+    const y = yForM(originalMidi(x / w));
+    if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // Corrected trace
+  ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let x = 0; x < w; x++) {
+    const y = yForM(correctedMidi(x / w, retune, drift, trans));
+    if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
+function playVocal(isCorrected) {
+  ensureAudio();
+  const retune = isCorrected ? Number(document.getElementById('rngRetune').value) : 0;
+  const drift = isCorrected ? Number(document.getElementById('rngDrift').value) : 100;
+  const trans = isCorrected ? Number(document.getElementById('rngTrans').value) : 0;
+
+  const dur = 1.6;
+  const now = audioCtx.currentTime + 0.05;
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sawtooth';
+
+  // Formant filter ("Ah" vowel ~750 Hz)
+  const f1 = audioCtx.createBiquadFilter();
+  f1.type = 'bandpass'; f1.Q.value = 4.5;
+  const formantRatio = (!isCorrected || formantOn) ? 1.0 : Math.pow(2, trans / 12);
+  f1.frequency.value = 750 * formantRatio;
+
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.001, now);
+  gain.gain.linearRampToValueAtTime(0.35, now + 0.04);
+  gain.gain.setValueAtTime(0.35, now + dur - 0.08);
+  gain.gain.linearRampToValueAtTime(0.001, now + dur);
+
+  const steps = 80;
+  for (let i = 0; i <= steps; i++) {
+    const tNorm = i / steps;
+    const m = correctedMidi(tNorm, retune, drift, trans);
+    const freq = 440 * Math.pow(2, (m - 69) / 12);
+    osc.frequency.setValueAtTime(freq, now + tNorm * dur);
+  }
+
+  osc.connect(f1); f1.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(now); osc.stop(now + dur + 0.02);
+}
+
+function checkPitchTask() {
+  const retune = Number(document.getElementById('rngRetune').value);
+  const drift = Number(document.getElementById('rngDrift').value);
+  const trans = Number(document.getElementById('rngTrans').value);
+  const box = document.getElementById('pitchFeedback');
+
+  if (task === 'A') {
+    if (retune >= 45 && retune <= 80 && drift >= 55 && trans === 0) {
+      box.className = 'callout';
+      box.innerHTML = '<strong>Spot On (Task A)!</strong> The flat <code>E4</code> is corrected cleanly while natural vibrato and phrasing remain intact.';
+    } else {
+      box.className = 'callout bad';
+      box.innerHTML = `<strong>Adjust Settings:</strong> ${retune < 45 ? 'Increase Retune Speed to fix the flat E4. ' : ''}${retune > 80 || drift < 55 ? 'Back off Retune Speed or increase Drift so it doesn\'t sound robotic. ' : ''}${trans !== 0 ? 'Keep Transpose at 0 st for corrective tuning.' : ''}`;
+    }
+  } else {
+    if (trans === 4 && retune >= 45 && formantOn) {
+      box.className = 'callout';
+      box.innerHTML = '<strong>Spot On (Task B)!</strong> +4 semitone harmony is in tune and <strong>Formant Preservation</strong> keeps the vocal timbre natural.';
+    } else {
+      box.className = 'callout bad';
+      box.innerHTML = `<strong>Adjust Settings:</strong> ${trans !== 4 ? 'Set Transpose to +4 st. ' : ''}${retune < 45 ? 'Increase Retune Speed to fix the flat E4. ' : ''}${!formantOn ? 'Turn <strong>Formant Preservation ON</strong> to eliminate the chipmunk effect!' : ''}`;
+    }
+  }
+}
+
+setTask('A');
+</script>
+</body>
+</html>

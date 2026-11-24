@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Component 4 Lab: Drum Time-Correction &amp; Flex Time</title>
+<style>
+  :root {
+    --bg: #f8fafc; --surface: #ffffff; --surface-alt: #f1f5f9;
+    --ink: #0f172a; --muted: #475569; --border: #e2e8f0;
+    --accent: #7c3aed; --good: #16a34a; --bad: #dc2626;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 14px rgba(15, 23, 42, 0.04);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.55; }
+  .container { max-width: 1120px; margin: 0 auto; padding: 24px 20px 64px; }
+  header.hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #6d28d9 100%);
+    color: #fff; border-radius: 16px; padding: 28px 32px; margin-bottom: 24px; box-shadow: var(--shadow);
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px;
+  }
+  .hero-badge { display: inline-flex; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 10px; }
+  header.hero h1 { margin: 0 0 8px; font-size: 28px; line-height: 1.2; }
+  header.hero p { margin: 0; color: #cbd5e1; max-width: 700px; font-size: 15px; }
+  .btn { border: 1px solid var(--border); background: var(--surface); color: var(--ink); padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn:hover { background: var(--surface-alt); }
+  .btn-primary { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+  .btn-success { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .btn-ghost { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.28); color: #fff; }
+  .btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+  section.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 26px; margin-bottom: 24px; box-shadow: var(--shadow); }
+  section.card h2 { margin: 0 0 6px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+  .section-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: #0f172a; color: #fff; font-size: 13px; font-weight: 700; }
+  p.lead { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+  .lab-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 880px) { .lab-grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .panel h3 { margin: 0 0 10px; font-size: 15px; }
+  canvas.scope { width: 100%; height: 200px; background: #0f172a; border-radius: 8px; display: block; margin-bottom: 12px; }
+  .control-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; font-size: 13px; }
+  .control-row label { display: flex; justify-content: space-between; font-weight: 600; }
+  .control-row input[type="range"] { width: 100%; accent-color: #7c3aed; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .callout { padding: 12px 14px; border-radius: 8px; border-left: 4px solid #16a34a; background: #f0fdf4; font-size: 13.5px; margin-top: 12px; }
+  .callout.warn { border-left-color: #d97706; background: #fffbeb; }
+  .callout.bad { border-left-color: #dc2626; background: #fef2f2; }
+  code { background: #e2e8f0; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="hero">
+    <div>
+      <div class="hero-badge">Component 4 Scenario 4 &bull; Time Correction &amp; Flex Audio</div>
+      <h1>Drum Time-Correction: Transient Markers &amp; Algorithms</h1>
+      <p>Quantise a loose 120 BPM drum groove (1 bar) onto the grid and choose the correct Flex/Elastic Audio algorithm to avoid stretching artifacts.</p>
+    </div>
+    <div>
+      <a class="btn btn-ghost" href="/">&larr; Main Audio Editing Hub</a>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="section-num">1</span> Interactive Transient Grid &amp; Flex Lab (120 BPM)</h2>
+    <p class="lead">Beat 2 (Snare) is dragging <strong>+45 ms</strong> late and Beat 3.5 (Kick) is rushing <strong>-35 ms</strong> early. Nudge both transient markers onto the dashed grid lines (<code>0 ms</code>) and pick the right algorithm.</p>
+
+    <div class="lab-grid">
+      <div class="panel">
+        <h3>1-Bar Drum Transient Grid (Beats 1 &ndash; 4)</h3>
+        <canvas id="gridCanvas" class="scope" width="560" height="200"></canvas>
+        <div class="pill-row">
+          <button class="btn btn-primary" onclick="playGroove()">Play 1-Bar Groove + Click</button>
+          <button class="btn" onclick="resetGroove()">Reset Loose Timing</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Flex / Elastic Audio Controls</h3>
+        <div class="control-row">
+          <label><span>Beat 2 (Snare) Offset</span><span id="lblB2">+45 ms (Dragging)</span></label>
+          <input type="range" id="rngB2" min="-60" max="60" step="5" value="45" oninput="updateGrid()" />
+        </div>
+        <div class="control-row">
+          <label><span>Beat 3.5 (Kick) Offset</span><span id="lblB35">-35 ms (Rushing)</span></label>
+          <input type="range" id="rngB35" min="-60" max="60" step="5" value="-35" oninput="updateGrid()" />
+        </div>
+        <div class="control-row">
+          <label><span>Flex / Elastic Algorithm</span><span id="lblAlgo">Monophonic</span></label>
+          <div class="pill-row" style="margin:2px 0;">
+            <button class="btn" id="algRhy" onclick="setAlgo('rhythmic')">Rhythmic / Slicing</button>
+            <button class="btn active" id="algMono" onclick="setAlgo('monophonic')">Monophonic</button>
+            <button class="btn" id="algPoly" onclick="setAlgo('polyphonic')">Polyphonic</button>
+          </div>
+        </div>
+        <div class="pill-row">
+          <button class="btn btn-success" onclick="checkTiming()">Check Timing &amp; Algorithm</button>
+        </div>
+        <div id="timeFeedback" class="callout warn">
+          <strong>Listen carefully:</strong> Notice the snare dragging behind the metronome click on Beat 2, and the kick rushing ahead on Beat 3.5.
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+let algo = 'monophonic';
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function setAlgo(a) {
+  algo = a;
+  document.getElementById('algRhy').classList.toggle('active', a === 'rhythmic');
+  document.getElementById('algMono').classList.toggle('active', a === 'monophonic');
+  document.getElementById('algPoly').classList.toggle('active', a === 'polyphonic');
+  document.getElementById('lblAlgo').textContent = a.charAt(0).toUpperCase() + a.slice(1);
+  updateGrid();
+}
+
+function resetGroove() {
+  document.getElementById('rngB2').value = 45;
+  document.getElementById('rngB35').value = -35;
+  setAlgo('monophonic');
+}
+
+function updateGrid() {
+  const b2 = Number(document.getElementById('rngB2').value);
+  const b35 = Number(document.getElementById('rngB35').value);
+  document.getElementById('lblB2').textContent = b2 === 0 ? '0 ms (Locked)' : `${b2 > 0 ? '+' : ''}${b2} ms (${b2 > 0 ? 'Dragging' : 'Rushing'})`;
+  document.getElementById('lblB35').textContent = b35 === 0 ? '0 ms (Locked)' : `${b35 > 0 ? '+' : ''}${b35} ms (${b35 > 0 ? 'Dragging' : 'Rushing'})`;
+
+  const canvas = document.getElementById('gridCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height, mid = h / 2;
+  ctx.clearRect(0, 0, w, h);
+
+  // 4 beats across 2000 ms (120 BPM = 500 ms per beat)
+  const totalMs = 2000;
+  [0, 500, 1000, 1250, 1500].forEach((ms, idx) => {
+    const x = (ms / totalMs) * (w - 40) + 20;
+    ctx.strokeStyle = idx === 3 ? '#475569' : '#64748b';
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(x, 16); ctx.lineTo(x, h - 22); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#94a3b8'; ctx.font = '11px sans-serif';
+    const labels = ['1', '2', '3', '3.5', '4'];
+    ctx.fillText('Beat ' + labels[idx], x - 14, h - 6);
+  });
+
+  const hits = [
+    { ms: 0, type: 'Kick', ok: true },
+    { ms: 500 + b2, type: 'Snare', ok: Math.abs(b2) <= 5 },
+    { ms: 1000, type: 'Kick', ok: true },
+    { ms: 1250 + b35, type: 'Kick', ok: Math.abs(b35) <= 5 },
+    { ms: 1500, type: 'Snare', ok: true }
+  ];
+
+  hits.forEach(hit => {
+    const x = (hit.ms / totalMs) * (w - 40) + 20;
+    ctx.fillStyle = hit.ok ? '#34d399' : '#f87171';
+    ctx.fillRect(x - 3, mid - 58, 6, 116);
+    ctx.font = 'bold 11px sans-serif';
+    ctx.fillText(hit.type, x - 14, 24);
+  });
+}
+
+function playGroove() {
+  ensureAudio();
+  const b2 = Number(document.getElementById('rngB2').value) / 1000;
+  const b35 = Number(document.getElementById('rngB35').value) / 1000;
+  const now = audioCtx.currentTime + 0.05;
+
+  // Click on 1,2,3,4
+  [0, 0.5, 1.0, 1.5].forEach((t, i) => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = i === 0 ? 1200 : 850;
+    g.gain.setValueAtTime(0.12, now + t);
+    g.gain.exponentialRampToValueAtTime(0.001, now + t + 0.03);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(now + t); o.stop(now + t + 0.035);
+  });
+
+  function triggerKick(t) {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.setValueAtTime(130, now + t);
+    o.frequency.exponentialRampToValueAtTime(45, now + t + 0.12);
+    g.gain.setValueAtTime(0.45, now + t);
+    g.gain.exponentialRampToValueAtTime(0.001, now + t + 0.16);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(now + t); o.stop(now + t + 0.17);
+  }
+
+  function triggerSnare(t) {
+    const sr = audioCtx.sampleRate, buf = audioCtx.createBuffer(1, sr * 0.15, sr);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) {
+      const s = i / sr;
+      d[i] = ((Math.random() * 2 - 1) * 0.4 + Math.sin(2 * Math.PI * 190 * s) * 0.4) * Math.exp(-s * 22);
+    }
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf; src.connect(audioCtx.destination); src.start(now + t);
+    // Simulate flam/artifact if wrong algorithm on shifted hits
+    if (algo !== 'rhythmic' && (Math.abs(b2) > 0 || Math.abs(b35) > 0)) {
+      const src2 = audioCtx.createBufferSource();
+      const g2 = audioCtx.createGain(); g2.gain.value = 0.25;
+      src2.buffer = buf; src2.connect(g2); g2.connect(audioCtx.destination);
+      src2.start(now + t + 0.018);
+    }
+  }
+
+  triggerKick(0);
+  triggerSnare(0.5 + b2);
+  triggerKick(1.0);
+  triggerKick(1.25 + b35);
+  triggerSnare(1.5);
+}
+
+function checkTiming() {
+  const b2 = Number(document.getElementById('rngB2').value);
+  const b35 = Number(document.getElementById('rngB35').value);
+  const box = document.getElementById('timeFeedback');
+  const errs = [];
+  if (Math.abs(b2) > 5) errs.push('Align <strong>Beat 2 (Snare)</strong> to <code>0 ms</code>.');
+  if (Math.abs(b35) > 5) errs.push('Align <strong>Beat 3.5 (Kick)</strong> to <code>0 ms</code>.');
+  if (algo !== 'rhythmic') errs.push('Switch to <strong>Rhythmic / Slicing</strong> mode &mdash; <em>Monophonic</em> and <em>Polyphonic</em> smear drum transients!');
+
+  if (errs.length === 0) {
+    box.className = 'callout';
+    box.innerHTML = '<strong>Locked to the Grid!</strong> Clean transient slicing preserves punchy drum attacks with zero pre-echo or flamming.';
+  } else {
+    box.className = 'callout bad';
+    box.innerHTML = '<strong>Adjustments needed:</strong><ul style="margin:6px 0 0;padding-left:18px;">' + errs.map(e => `<li>${e}</li>`).join('') + '</ul>';
+  }
+}
+
+updateGrid();
+</script>
+</body>
+</html>

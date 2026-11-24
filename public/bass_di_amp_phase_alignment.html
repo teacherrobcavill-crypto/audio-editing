@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Component 4 Lab: Bass Guitar DI + Amp Phase Alignment</title>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-alt: #f1f5f9;
+    --ink: #0f172a;
+    --muted: #475569;
+    --border: #e2e8f0;
+    --di: #2563eb;
+    --amp: #d97706;
+    --sum-good: #16a34a;
+    --sum-bad: #dc2626;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 14px rgba(15, 23, 42, 0.04);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+  }
+  .container { max-width: 1120px; margin: 0 auto; padding: 24px 20px 64px; }
+
+  header.hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #1d4ed8 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  header.hero h1 { margin: 0 0 8px; font-size: 28px; line-height: 1.2; }
+  header.hero p { margin: 0; color: #cbd5e1; max-width: 700px; font-size: 15px; }
+  .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn:hover { background: var(--surface-alt); }
+  .btn-primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-success { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .btn-success:hover { background: #15803d; }
+  .btn-ghost {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.28);
+    color: #fff;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.22); }
+  .btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 7px 13px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  nav.toc a:hover { color: var(--ink); border-color: #94a3b8; }
+
+  section.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 26px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+  section.card h2 {
+    margin: 0 0 6px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  p.lead { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+
+  .lab-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 880px) { .lab-grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .panel h3 { margin: 0 0 10px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+
+  canvas.scope {
+    width: 100%;
+    height: 195px;
+    background: #0f172a;
+    border-radius: 8px;
+    display: block;
+    margin-bottom: 12px;
+  }
+  canvas.freq {
+    width: 100%;
+    height: 155px;
+    background: #0f172a;
+    border-radius: 8px;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+
+  .control-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 14px;
+    font-size: 13px;
+  }
+  .control-row label {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+  }
+  .control-row input[type="range"] { width: 100%; accent-color: #2563eb; }
+
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+
+  .callout {
+    padding: 12px 14px;
+    border-radius: 8px;
+    border-left: 4px solid #16a34a;
+    background: #f0fdf4;
+    font-size: 13.5px;
+    margin-top: 12px;
+  }
+  .callout.warn { border-left-color: #d97706; background: #fffbeb; }
+  .callout.bad { border-left-color: #dc2626; background: #fef2f2; }
+  .callout.info { border-left-color: #2563eb; background: #eff6ff; }
+
+  .diagram-wrap {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    overflow-x: auto;
+  }
+  .diagram-wrap svg { width: 100%; height: auto; min-width: 680px; display: block; }
+
+  .cards-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .mini-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    background: var(--surface-alt);
+  }
+  .mini-card h3 { margin: 0 0 8px; font-size: 15.5px; }
+  .mini-card p, .mini-card ul { margin: 0; font-size: 13.5px; color: var(--muted); }
+  .mini-card ul { padding-left: 18px; margin-top: 6px; }
+
+  table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin-top: 8px;
+  }
+  table.spec-table th, table.spec-table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  table.spec-table th { background: var(--surface-alt); font-weight: 700; }
+
+  .exam-q {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    background: #fcfcfd;
+  }
+  .exam-q-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .marks-pill {
+    background: #0f172a;
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  details.markscheme {
+    margin-top: 10px;
+    background: var(--surface-alt);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13.5px;
+  }
+  details.markscheme summary { cursor: pointer; font-weight: 700; color: #1d4ed8; }
+  details.markscheme ul { margin: 8px 0 2px; padding-left: 20px; }
+
+  code {
+    background: #e2e8f0;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  footer.rag-footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12.5px;
+    margin-top: 28px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="hero">
+    <div>
+      <div class="hero-badge">Component 4 Practical Scenario &bull; Audio Editing &amp; Phase</div>
+      <h1>Bass Guitar: DI + Amp Phase Alignment Lab</h1>
+      <p>Interactive student task: diagnose why simultaneously recorded DI and microphone signals cancel each other out, then align them to sample accuracy and hear the low-end return.</p>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-ghost" href="/" style="text-decoration:none;">&larr; Main Audio Editing Guide</a>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <a href="#scenario">1. The Recording Setup</a>
+    <a href="#interactive-task">2. Interactive Alignment Task</a>
+    <a href="#physics">3. What Is Happening?</a>
+    <a href="#why-align">4. Why Phase Align Audio?</a>
+    <a href="#exam-practice">5. Exam Practice</a>
+  </nav>
+
+  <!-- SECTION 1: RECORDING SETUP -->
+  <section id="scenario" class="card">
+    <h2><span class="section-num">1</span> Why DI + Amp Arrive at Different Times</h2>
+    <p class="lead">In the studio, bass guitar is routinely split into two simultaneous DAW tracks: a clean <strong>DI (Direct Injection)</strong> track for sub-bass weight, and a <strong>Mic'd Amp</strong> track for midrange growl and speaker character.</p>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 900 185" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bass DI and Amp signal paths">
+        <defs>
+          <marker id="arrB" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb"/>
+          </marker>
+          <marker id="arrA" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706"/>
+          </marker>
+        </defs>
+
+        <!-- Bass -->
+        <rect x="16" y="55" width="118" height="68" rx="10" fill="#f1f5f9" stroke="#0f172a" stroke-width="2"/>
+        <text x="75" y="84" text-anchor="middle" font-size="13.5" font-weight="800" fill="#0f172a">Bass Guitar</text>
+        <text x="75" y="103" text-anchor="middle" font-size="11" fill="#475569">Electrical Output</text>
+
+        <!-- DI Box -->
+        <rect x="180" y="55" width="110" height="68" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <text x="235" y="84" text-anchor="middle" font-size="13.5" font-weight="800" fill="#1e40af">DI Box</text>
+        <text x="235" y="103" text-anchor="middle" font-size="11" fill="#1e3a8a">Splits Signal</text>
+        <line x1="134" y1="89" x2="176" y2="89" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrB)"/>
+
+        <!-- Top Path: DI to DAW -->
+        <path d="M 290 70 L 660 70" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrB)"/>
+        <rect x="360" y="20" width="235" height="36" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+        <text x="477" y="42" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1e40af">Speed of Electricity &rarr; 0.00 ms delay</text>
+
+        <!-- Bottom Path: Amp + Air + Mic -->
+        <path d="M 290 108 L 350 108" fill="none" stroke="#d97706" stroke-width="2.5" marker-end="url(#arrA)"/>
+        <rect x="354" y="92" width="108" height="58" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+        <text x="408" y="117" text-anchor="middle" font-size="13" font-weight="800" fill="#b45309">Bass Amp</text>
+        <text x="408" y="135" text-anchor="middle" font-size="10.5" fill="#92400e">Speaker Cone</text>
+
+        <!-- Air gap -->
+        <line x1="462" y1="121" x2="554" y2="121" stroke="#d97706" stroke-width="2.5" stroke-dasharray="5,4" marker-end="url(#arrA)"/>
+        <text x="508" y="109" text-anchor="middle" font-size="11" font-weight="700" fill="#b45309">Air (343 m/s)</text>
+        <text x="508" y="140" text-anchor="middle" font-size="10.5" fill="#92400e">+1 to 5 ms delay</text>
+
+        <!-- Mic -->
+        <rect x="558" y="92" width="90" height="58" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+        <text x="603" y="117" text-anchor="middle" font-size="13" font-weight="800" fill="#b45309">Mic</text>
+        <text x="603" y="135" text-anchor="middle" font-size="10.5" fill="#92400e">Dynamic/Condenser</text>
+        <line x1="648" y1="121" x2="660" y2="121" stroke="#d97706" stroke-width="2.5" marker-end="url(#arrA)"/>
+
+        <!-- DAW -->
+        <rect x="665" y="42" width="215" height="108" rx="12" fill="#0f172a"/>
+        <text x="772" y="75" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">DAW Tracks</text>
+        <text x="772" y="98" text-anchor="middle" font-size="11.5" fill="#60a5fa">Track 1: DI (Arrives First)</text>
+        <text x="772" y="118" text-anchor="middle" font-size="11.5" fill="#fbbf24">Track 2: Amp (Arrives Late)</text>
+        <text x="772" y="137" text-anchor="middle" font-size="10.5" fill="#94a3b8">Sum = Comb Filtering!</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- SECTION 2: INTERACTIVE STUDENT TASK -->
+  <section id="interactive-task" class="card">
+    <h2><span class="section-num">2</span> Interactive Student Task: Align the Bass Tracks</h2>
+    <p class="lead"><strong>Your Mission:</strong> Choose a studio scenario below, listen to the DI + Amp mix, and use <strong>DI Track Delay</strong> and <strong>Amp Polarity (&Oslash;)</strong> to align the waveforms so the low end snaps back into focus.</p>
+
+    <div class="pill-row" style="margin-bottom:16px;">
+      <button class="btn active" id="scnA" onclick="loadScenario('A')">Scenario A: Close Mic (51 cm / 1.50 ms)</button>
+      <button class="btn" id="scnB" onclick="loadScenario('B')">Scenario B: Mid-Room Mic (171 cm / 5.00 ms)</button>
+      <button class="btn" id="scnC" onclick="loadScenario('C')">Scenario C: Inverted Cab + 2.20 ms</button>
+      <button class="btn" id="scnR" onclick="loadScenario('R')">Random Exam Challenge</button>
+    </div>
+
+    <div class="lab-grid">
+      <!-- Left: Visualisers & Audio -->
+      <div class="panel">
+        <h3>
+          <span>Sample-Level Waveform View (First 20 ms)</span>
+          <span id="sampleBadge" style="font-size:12px; color:var(--muted);">48 kHz</span>
+        </h3>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--di);"></span>Track 1: Bass DI (nudged)</span>
+          <span><span class="dot" style="background:var(--amp);"></span>Track 2: Bass Amp Mic</span>
+          <span><span class="dot" id="sumDot" style="background:var(--sum-bad);"></span>Summed (DI + Amp)</span>
+        </div>
+        <canvas id="waveCanvas" class="scope" width="560" height="195"></canvas>
+
+        <h3>Comb-Filtering Frequency Response (40 Hz &ndash; 1000 Hz)</h3>
+        <canvas id="freqCanvas" class="freq" width="560" height="155"></canvas>
+
+        <div class="pill-row">
+          <button class="btn btn-primary" onclick="playBass('sum')">Play Summed (DI + Amp)</button>
+          <button class="btn" onclick="playBass('di')">Solo DI</button>
+          <button class="btn" onclick="playBass('amp')">Solo Amp</button>
+        </div>
+      </div>
+
+      <!-- Right: DAW Controls & Grading -->
+      <div class="panel">
+        <h3>DAW Channel Controls</h3>
+
+        <div class="control-row">
+          <label>
+            <span>Nudge / Delay DI Track</span>
+            <span id="lblDiDelay">0.00 ms (0 samples)</span>
+          </label>
+          <input type="range" id="rngDiDelay" min="0" max="7" step="0.05" value="0" oninput="updateLab()" />
+        </div>
+
+        <div class="control-row">
+          <label>
+            <span>Amp Track Polarity (&Oslash; 180&deg; Invert)</span>
+            <span id="lblPolState">Normal (0&deg;)</span>
+          </label>
+          <button class="btn" id="btnInvert" onclick="toggleInvert()" style="align-self:flex-start;">Polarity Invert Amp: OFF</button>
+        </div>
+
+        <div class="control-row">
+          <label>
+            <span>Bass Test Note</span>
+            <span id="lblNote">E1 (41.2 Hz) + Harmonics</span>
+          </label>
+          <div class="pill-row" style="margin:2px 0 0;">
+            <button class="btn active" id="noteE1" onclick="setNote(41.2, 'E1 (41.2 Hz)')">E1 (41 Hz)</button>
+            <button class="btn" id="noteA1" onclick="setNote(55.0, 'A1 (55.0 Hz)')">A1 (55 Hz)</button>
+            <button class="btn" id="noteG2" onclick="setNote(98.0, 'G2 (98.0 Hz)')">G2 (98 Hz)</button>
+          </div>
+        </div>
+
+        <div class="pill-row" style="margin-top:14px;">
+          <button class="btn btn-success" onclick="checkAlignment()">Check My Alignment</button>
+          <button class="btn" onclick="revealSolution()">Show Target Solution</button>
+        </div>
+
+        <div id="feedbackBox" class="callout warn">
+          <strong>Status:</strong> Adjust the <em>DI Track Delay</em> slider so the blue DI wave lines up on top of the amber Amp wave, and check whether the Amp polarity needs inverting.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: WHAT IS HAPPENING -->
+  <section id="physics" class="card">
+    <h2><span class="section-num">3</span> What Is Happening? (Wave Superposition &amp; Comb Filtering)</h2>
+    <p class="lead">Understanding the AoS 2 physics behind the visualiser above earns full marks in Component 4 written analysis.</p>
+
+    <div class="cards-2">
+      <div class="mini-card">
+        <h3>1. Propagation Delay ($t = d / 343$)</h3>
+        <p>Electricity travels down a guitar cable at near the speed of light (effectively <strong>0 ms</strong> delay). Sound travels from the amp speaker cone to the microphone at roughly <strong>343 m/s</strong>.</p>
+        <ul>
+          <li>A mic placed <strong>51 cm (0.51 m)</strong> away arrives <code>0.51 / 343 = 1.49 ms</code> (~72 samples at 48 kHz) late.</li>
+          <li>A mic placed <strong>1.71 m</strong> away arrives <code>5.00 ms</code> (~240 samples) late.</li>
+        </ul>
+      </div>
+
+      <div class="mini-card">
+        <h3>2. Frequency-Dependent Comb Filtering</h3>
+        <p>A fixed time delay affects different frequencies by different phase angles:</p>
+        <ul>
+          <li>At <code>100 Hz</code> (period = 10 ms), a <strong>5 ms</strong> delay is half a cycle (<strong>180&deg;</strong>) &rarr; total cancellation.</li>
+          <li>At <code>200 Hz</code> (period = 5 ms), the same <strong>5 ms</strong> delay is a full cycle (<strong>360&deg;</strong>) &rarr; constructive reinforcement.</li>
+          <li>This alternating pattern of deep notches and peaks looks like a hair comb on an analyser &mdash; hence <strong>comb filtering</strong>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <table class="spec-table" style="margin-top:16px;">
+      <thead>
+        <tr>
+          <th>Concept</th>
+          <th>Polarity Inversion (&Oslash; / 180&deg;)</th>
+          <th>Time Alignment (Sample Nudging / Delay)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>What it does</strong></td>
+          <td>Flips positive voltage to negative (and vice versa) across all frequencies equally.</td>
+          <td>Shifts an entire audio region forward or backward in time by exact milliseconds/samples.</td>
+        </tr>
+        <tr>
+          <td><strong>When to use it</strong></td>
+          <td>When a mic/speaker/DI transformer is wired 180&deg; opposite (waves are mirror images at <code>0 ms</code>).</td>
+          <td>When one mic is physically further from the source than another (or DI vs. mic'd amp).</td>
+        </tr>
+        <tr>
+          <td><strong>Why polarity alone isn't enough</strong></td>
+          <td colspan="2">Flipping polarity on a 5 ms delayed track fixes cancellation at 100 Hz, <em>but creates a new cancellation notch at 200 Hz!</em> Only <strong>time alignment</strong> aligns all harmonics simultaneously.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 4: WHY ALIGN -->
+  <section id="why-align" class="card">
+    <h2><span class="section-num">4</span> Why Is It Best to Phase-Align Audio?</h2>
+    <p class="lead">Four practical and sonic reasons examiners look for when you justify phase alignment in Section B.</p>
+
+    <div class="cards-2">
+      <div class="mini-card">
+        <h3>1. Restores Low-End Weight (+6 dB Coherent Sum)</h3>
+        <p>When the DI sub-fundamental and Amp fundamental peak together in phase, their amplitudes sum constructively (+6 dB), giving solid, consistent bass weight across every note on the fretboard.</p>
+      </div>
+      <div class="mini-card">
+        <h3>2. Eliminates Hollow Midrange Notches</h3>
+        <p>Removing comb filtering clears out boxy/nasal dips in the 200–800 Hz range, preserving the natural pick attack and woody fret definition of the bass.</p>
+      </div>
+      <div class="mini-card">
+        <h3>3. Stops "Fix-It-With-EQ" Headroom Loss</h3>
+        <p>Boosting +8 dB at 80 Hz on an EQ cannot restore frequencies that were cancelled by phase. Aligning phase first prevents muddy EQ boosts and keeps downstream compressors reacting accurately.</p>
+      </div>
+      <div class="mini-card">
+        <h3>4. Preserves Transient Punch &amp; Mono Compatibility</h3>
+        <p>Aligned DI + Amp transients hit simultaneously instead of smearing ("flamming"), keeping the groove locked to the kick drum and ensuring the bass translates cleanly on mono club/PA systems.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: EXAM PRACTICE -->
+  <section id="exam-practice" class="card">
+    <h2><span class="section-num">5</span> Component 4 Exam Practice</h2>
+    <div class="exam-q">
+      <div class="exam-q-head">
+        <strong>Question (AO2/AO3 — Bass DI + Amp Alignment)</strong>
+        <span class="marks-pill">5 marks</span>
+      </div>
+      <p style="margin:0;">A bass guitar is recorded simultaneously via a DI box and a dynamic microphone placed 68 cm from the amplifier speaker. When both faders are raised, the bass sounds thin and lacks sub-bass weight. Explain why this occurs and describe how to fix it in a DAW without using EQ.</p>
+      <details class="markscheme">
+        <summary>Show Mark Scheme</summary>
+        <ul>
+          <li>The DI signal arrives almost instantaneously, whereas the microphone signal is delayed by acoustic propagation (~2 ms at 68 cm) <strong>(1)</strong>.</li>
+          <li>Summing the two signals creates frequency-dependent phase differences, causing <strong>destructive interference / comb filtering</strong> and low-frequency cancellation <strong>(1)</strong>.</li>
+          <li>Zoom in to sample level on both waveforms and <strong>nudge/delay the DI track</strong> later (or nudge the mic track earlier) so the first positive transient peaks align <strong>(2)</strong>.</li>
+          <li>Check <strong>180&deg; polarity inversion (&Oslash;)</strong> on one track and keep whichever polarity gives the fullest low-end response <strong>(1)</strong>.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <footer class="rag-footer">
+    A-Level Music Technology (9MT0/04) Component 4 &bull; Bass DI + Amp Phase Alignment Interactive Lab.
+  </footer>
+
+</div>
+
+<script>
+const SCENARIOS = {
+  A: { delayMs: 1.50, inverted: false, label: "Scenario A: Close Mic (51 cm)" },
+  B: { delayMs: 5.00, inverted: false, label: "Scenario B: Mid-Room Mic (171 cm)" },
+  C: { delayMs: 2.20, inverted: true,  label: "Scenario C: Inverted Cab + 2.20 ms" }
+};
+
+let targetDelayMs = 1.50;
+let targetInverted = false;
+let userInverted = false;
+let currentFreq = 41.2;
+let audioCtx = null;
+
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function loadScenario(key) {
+  ['scnA','scnB','scnC','scnR'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('scn' + key).classList.add('active');
+
+  if (key === 'R') {
+    targetDelayMs = Math.round((0.8 + Math.random() * 5.2) * 20) / 20;
+    targetInverted = Math.random() < 0.5;
+  } else {
+    targetDelayMs = SCENARIOS[key].delayMs;
+    targetInverted = SCENARIOS[key].inverted;
+  }
+
+  // Reset user controls
+  document.getElementById('rngDiDelay').value = 0;
+  userInverted = false;
+  updateInvertBtn();
+  const box = document.getElementById('feedbackBox');
+  box.className = 'callout warn';
+  box.innerHTML = '<strong>New Scenario Loaded:</strong> Audition <em>Summed (DI + Amp)</em>, then nudge the DI delay slider and test Polarity Invert until the waveforms lock together.';
+  updateLab();
+}
+
+function toggleInvert() {
+  userInverted = !userInverted;
+  updateInvertBtn();
+  updateLab();
+}
+
+function updateInvertBtn() {
+  const btn = document.getElementById('btnInvert');
+  btn.textContent = `Polarity Invert Amp: ${userInverted ? 'ON (180\u00B0)' : 'OFF'}`;
+  btn.classList.toggle('active', userInverted);
+  document.getElementById('lblPolState').textContent = userInverted ? 'Inverted (180\u00B0)' : 'Normal (0\u00B0)';
+}
+
+function setNote(freq, label) {
+  currentFreq = freq;
+  document.getElementById('lblNote').textContent = label + ' + Harmonics';
+  ['noteE1','noteA1','noteG2'].forEach(id => document.getElementById(id).classList.remove('active'));
+  if (freq < 45) document.getElementById('noteE1').classList.add('active');
+  else if (freq < 60) document.getElementById('noteA1').classList.add('active');
+  else document.getElementById('noteG2').classList.add('active');
+  updateLab();
+}
+
+function bassWave(tSec, freq, isAmp) {
+  // Rich bass pluck: fundamental + 2nd + 3rd + 4th harmonic
+  const w = 2 * Math.PI * freq;
+  const attack = Math.min(1, tSec / 0.0025);
+  if (!isAmp) {
+    // DI: strong fundamental + crisp harmonics
+    return attack * (0.65 * Math.sin(w * tSec) + 0.25 * Math.sin(2 * w * tSec) + 0.12 * Math.sin(3 * w * tSec));
+  } else {
+    // Amp: slightly warmer, mild 2nd/3rd saturation
+    return attack * (0.58 * Math.sin(w * tSec) + 0.32 * Math.sin(2 * w * tSec) + 0.16 * Math.sin(3 * w * tSec));
+  }
+}
+
+function updateLab() {
+  const userDelayMs = Number(document.getElementById('rngDiDelay').value);
+  const samples48k = Math.round(userDelayMs * 48);
+  document.getElementById('lblDiDelay').textContent = `${userDelayMs.toFixed(2)} ms (${samples48k} samples)`;
+
+  const deltaMs = userDelayMs - targetDelayMs;
+  const polMatch = (userInverted === targetInverted);
+  const aligned = Math.abs(deltaMs) <= 0.15 && polMatch;
+
+  document.getElementById('sumDot').style.background = aligned ? 'var(--sum-good)' : 'var(--sum-bad)';
+
+  drawWaveforms(userDelayMs);
+  drawFreqResponse(deltaMs, polMatch);
+}
+
+function drawWaveforms(userDelayMs) {
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height, mid = h / 2;
+  ctx.clearRect(0, 0, w, h);
+
+  // Zero line
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(w, mid); ctx.stroke();
+
+  const windowMs = 20;
+  const polSign = (userInverted !== targetInverted) ? -1 : 1;
+  const deltaMs = userDelayMs - targetDelayMs;
+  const polMatch = (userInverted === targetInverted);
+  const aligned = Math.abs(deltaMs) <= 0.15 && polMatch;
+
+  // Helper to draw a track
+  function plot(color, lineW, fn) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineW;
+    ctx.beginPath();
+    for (let x = 0; x < w; x++) {
+      const tMs = (x / w) * windowMs;
+      const val = fn(tMs);
+      const py = mid - val * (h * 0.24);
+      if (x === 0) ctx.moveTo(x, py); else ctx.lineTo(x, py);
+    }
+    ctx.stroke();
+  }
+
+  const diFn = (tMs) => (tMs < userDelayMs ? 0 : bassWave((tMs - userDelayMs) / 1000, currentFreq, false));
+  const ampFn = (tMs) => (tMs < targetDelayMs ? 0 : polSign * bassWave((tMs - targetDelayMs) / 1000, currentFreq, true));
+  const sumFn = (tMs) => (diFn(tMs) + ampFn(tMs)) * 0.72;
+
+  plot('rgba(37, 99, 235, 0.85)', 2, diFn);
+  plot('rgba(217, 119, 6, 0.85)', 2, ampFn);
+  plot(aligned ? '#34d399' : '#f87171', 2.8, sumFn);
+}
+
+function drawFreqResponse(deltaMs, polMatch) {
+  const canvas = document.getElementById('freqCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // 0 dB reference line
+  const zeroY = h * 0.35;
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, zeroY); ctx.lineTo(w, zeroY); ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '11px sans-serif';
+  [50, 100, 200, 400, 800].forEach(f => {
+    const x = ((Math.log10(f) - Math.log10(40)) / (Math.log10(1000) - Math.log10(40))) * w;
+    ctx.fillText(f + 'Hz', x - 12, h - 6);
+  });
+
+  const deltaSec = Math.abs(deltaMs) / 1000;
+  const polSign = polMatch ? 1 : -1;
+
+  ctx.strokeStyle = (Math.abs(deltaMs) <= 0.15 && polMatch) ? '#34d399' : '#fbbf24';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let x = 0; x < w; x++) {
+    const logF = Math.log10(40) + (x / w) * (Math.log10(1000) - Math.log10(40));
+    const f = Math.pow(10, logF);
+    const phase = 2 * Math.PI * f * deltaSec;
+    // Magnitude of 1 + polSign * e^(-j*phase) normalized to 2
+    const mag = Math.sqrt(1 + 1 + 2 * polSign * Math.cos(phase)) / 2;
+    const db = 20 * Math.log10(Math.max(0.03, mag)); // -30 dB to 0 dB
+    const py = zeroY - (db / 30) * (h * 0.55);
+    if (x === 0) ctx.moveTo(x, py); else ctx.lineTo(x, py);
+  }
+  ctx.stroke();
+}
+
+function playBass(mode) {
+  ensureAudio();
+  const sr = audioCtx.sampleRate;
+  const dur = 0.85;
+  const buf = audioCtx.createBuffer(1, Math.floor(sr * dur), sr);
+  const data = buf.getChannelData(0);
+
+  const userDelaySec = Number(document.getElementById('rngDiDelay').value) / 1000;
+  const targetDelaySec = targetDelayMs / 1000;
+  const polSign = (userInverted !== targetInverted) ? -1 : 1;
+
+  for (let i = 0; i < data.length; i++) {
+    const t = i / sr;
+    const env = Math.exp(-t * 2.6) * Math.min(1, t / 0.003);
+    const di = t < userDelaySec ? 0 : bassWave(t - userDelaySec, currentFreq, false);
+    const amp = t < targetDelaySec ? 0 : polSign * bassWave(t - targetDelaySec, currentFreq, true);
+
+    if (mode === 'di') data[i] = di * 0.35 * env;
+    else if (mode === 'amp') data[i] = amp * 0.35 * env;
+    else data[i] = (di + amp) * 0.28 * env;
+  }
+
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioCtx.destination);
+  src.start();
+}
+
+function checkAlignment() {
+  const userDelayMs = Number(document.getElementById('rngDiDelay').value);
+  const deltaMs = userDelayMs - targetDelayMs;
+  const polMatch = (userInverted === targetInverted);
+  const box = document.getElementById('feedbackBox');
+
+  if (Math.abs(deltaMs) <= 0.15 && polMatch) {
+    box.className = 'callout';
+    box.innerHTML = `<strong>Phase Coherent! (Great job!)</strong> Your DI delay (<code>${userDelayMs.toFixed(2)} ms</code>) and polarity match the Amp track within <code>&plusmn;0.15 ms</code>. Notice how the comb-filter notches vanished and the low end regained full +6 dB weight.`;
+  } else if (!polMatch && Math.abs(deltaMs) <= 0.15) {
+    box.className = 'callout bad';
+    box.innerHTML = '<strong>Almost! Check Polarity:</strong> Your timing is spot-on, but the Amp track is <strong>180&deg; inverted</strong> relative to the DI. Toggle <em>Polarity Invert Amp</em>!';
+  } else {
+    box.className = 'callout bad';
+    const dir = deltaMs < 0 ? 'increase' : 'decrease';
+    box.innerHTML = `<strong>Out of Phase (${Math.abs(deltaMs).toFixed(2)} ms off):</strong> Try to <strong>${dir}</strong> the DI Track Delay${!polMatch ? ' and check Polarity Invert' : ''}. Watch the emerald/red summed wave and the comb-filter notches.`;
+  }
+}
+
+function revealSolution() {
+  document.getElementById('rngDiDelay').value = targetDelayMs;
+  userInverted = targetInverted;
+  updateInvertBtn();
+  updateLab();
+  checkAlignment();
+}
+
+// Init
+loadScenario('A');
+</script>
+</body>
+</html>

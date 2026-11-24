@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Component 4 Lab: Multi-Mic Drum Kit Phase Alignment</title>
+<style>
+  :root {
+    --bg: #f8fafc; --surface: #ffffff; --surface-alt: #f1f5f9;
+    --ink: #0f172a; --muted: #475569; --border: #e2e8f0;
+    --top: #2563eb; --bot: #d97706; --good: #16a34a; --bad: #dc2626;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 14px rgba(15, 23, 42, 0.04);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.55; }
+  .container { max-width: 1120px; margin: 0 auto; padding: 24px 20px 64px; }
+  header.hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #b45309 100%);
+    color: #fff; border-radius: 16px; padding: 28px 32px; margin-bottom: 24px; box-shadow: var(--shadow);
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px;
+  }
+  .hero-badge { display: inline-flex; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 10px; }
+  header.hero h1 { margin: 0 0 8px; font-size: 28px; line-height: 1.2; }
+  header.hero p { margin: 0; color: #cbd5e1; max-width: 700px; font-size: 15px; }
+  .btn { border: 1px solid var(--border); background: var(--surface); color: var(--ink); padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn:hover { background: var(--surface-alt); }
+  .btn-primary { background: #d97706; border-color: #d97706; color: #fff; }
+  .btn-primary:hover { background: #b45309; }
+  .btn-success { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .btn-ghost { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.28); color: #fff; }
+  .btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+  section.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 26px; margin-bottom: 24px; box-shadow: var(--shadow); }
+  section.card h2 { margin: 0 0 6px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+  .section-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: #0f172a; color: #fff; font-size: 13px; font-weight: 700; }
+  p.lead { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+  .lab-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 880px) { .lab-grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .panel h3 { margin: 0 0 10px; font-size: 15px; }
+  canvas.scope { width: 100%; height: 210px; background: #0f172a; border-radius: 8px; display: block; margin-bottom: 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; font-weight: 600; margin-bottom: 8px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+  .control-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; font-size: 13px; }
+  .control-row label { display: flex; justify-content: space-between; font-weight: 600; }
+  .control-row input[type="range"] { width: 100%; accent-color: #d97706; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .callout { padding: 12px 14px; border-radius: 8px; border-left: 4px solid #16a34a; background: #f0fdf4; font-size: 13.5px; margin-top: 12px; }
+  .callout.warn { border-left-color: #d97706; background: #fffbeb; }
+  .callout.bad { border-left-color: #dc2626; background: #fef2f2; }
+  .cards-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .mini-card { border: 1px solid var(--border); border-radius: 10px; padding: 15px; background: var(--surface-alt); }
+  .mini-card h3 { margin: 0 0 6px; font-size: 15px; }
+  .mini-card p { margin: 0; font-size: 13.5px; color: var(--muted); }
+  code { background: #e2e8f0; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  details.markscheme { margin-top: 10px; background: var(--surface-alt); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; }
+  details.markscheme summary { cursor: pointer; font-weight: 700; color: #b45309; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="hero">
+    <div>
+      <div class="hero-badge">Component 4 Scenario 2 &bull; Multi-Mic Drum Phase</div>
+      <h1>Drum Kit Phase: Snare Top/Bottom &amp; Overheads</h1>
+      <p>Diagnose and fix classic drum-kit phase cancellation: opposite-facing snare microphones (180&deg; polarity) and overhead-to-close-mic acoustic time delay.</p>
+    </div>
+    <div>
+      <a class="btn btn-ghost" href="/">&larr; Main Audio Editing Hub</a>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="section-num">1</span> Interactive Drum Phase Alignment Task</h2>
+    <p class="lead">Select a multi-mic drum scenario, audition the summed snare hit, and align the two microphones using <strong>Polarity Invert (&Oslash;)</strong> and <strong>Close-Mic Delay</strong>.</p>
+
+    <div class="pill-row" style="margin-bottom:14px;">
+      <button class="btn active" id="btnSnare" onclick="setMode('snare')">Mode A: Snare Top vs. Snare Bottom (Opposite Mics)</button>
+      <button class="btn" id="btnOH" onclick="setMode('oh')">Mode B: Snare Close Mic vs. Overheads (1.5 m / 4.37 ms)</button>
+    </div>
+
+    <div class="lab-grid">
+      <div class="panel">
+        <h3>Transient Waveform Scope (First 16 ms)</h3>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--top);"></span>Mic 1 (Snare Top)</span>
+          <span><span class="dot" style="background:var(--bot);"></span>Mic 2 (Bottom / Overhead)</span>
+          <span><span class="dot" id="sumDot" style="background:var(--bad);"></span>Summed Snare</span>
+        </div>
+        <canvas id="drumCanvas" class="scope" width="560" height="210"></canvas>
+        <div class="pill-row">
+          <button class="btn btn-primary" onclick="playSnare('sum')">Play Summed Snare</button>
+          <button class="btn" onclick="playSnare('m1')">Solo Mic 1</button>
+          <button class="btn" onclick="playSnare('m2')">Solo Mic 2</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>DAW Channel Controls</h3>
+        <div class="control-row">
+          <label><span>Nudge / Delay Mic 1 (Snare Top)</span><span id="lblDelay">0.00 ms</span></label>
+          <input type="range" id="rngDelay" min="0" max="6" step="0.05" value="0" oninput="updateDrum()" />
+        </div>
+        <div class="control-row">
+          <label><span>Mic 2 Polarity (&Oslash; 180&deg; Invert)</span><span id="lblPol">Normal (0&deg;)</span></label>
+          <button class="btn" id="btnPol" onclick="togglePol()" style="align-self:flex-start;">Polarity Invert Mic 2: OFF</button>
+        </div>
+        <div class="pill-row">
+          <button class="btn btn-success" onclick="checkDrum()">Check Alignment</button>
+          <button class="btn" onclick="solveDrum()">Show Solution</button>
+        </div>
+        <div id="drumFeedback" class="callout warn">
+          <strong>Snare Top vs. Bottom:</strong> When the drumstick hits the top skin, it pushes the top mic diaphragm <em>down/away</em> while pushing the bottom skin <em>toward</em> the bottom mic &mdash; creating natural <strong>180&deg; opposite polarity</strong>!
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="section-num">2</span> Key Exam Takeaways (AoS 1 &amp; AoS 2)</h2>
+    <div class="cards-2">
+      <div class="mini-card">
+        <h3>Snare Top vs. Snare Bottom</h3>
+        <p>Because the two microphones face opposite sides of the drum, their initial transients move in opposite directions (180&deg; out of polarity). Inverting the polarity (&Oslash;) on the bottom snare restores the 200 Hz fundamental punch without needing time delay.</p>
+      </div>
+      <div class="mini-card">
+        <h3>Close Mics vs. Overheads (3:1 Rule)</h3>
+        <p>Overheads sit 1–2 metres above the kit, so snare sound arrives <strong>3–6 ms later</strong> than the close snare mic. Nudging the close mic later (or aligning transients) stops comb filtering and keeps stereo imaging tight.</p>
+      </div>
+    </div>
+    <details class="markscheme" style="margin-top:14px;">
+      <summary>Quick Exam Check (3 Marks): Why invert polarity on a bottom snare mic?</summary>
+      <ul>
+        <li>The top and bottom snare mics face opposite directions on either side of the drum shell <strong>(1)</strong>.</li>
+        <li>A downward drumstick strike pushes air away from the top mic and toward the bottom mic, producing waveforms 180&deg; out of polarity <strong>(1)</strong>.</li>
+        <li>Inverting polarity (&Oslash;) aligns the positive/negative peaks, preventing low-mid cancellation and restoring body/punch <strong>(1)</strong>.</li>
+      </ul>
+    </details>
+  </section>
+</div>
+
+<script>
+let mode = 'snare';
+let targetDelay = 0.0;
+let targetPol = true;
+let userPol = false;
+let audioCtx = null;
+
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnSnare').classList.toggle('active', m === 'snare');
+  document.getElementById('btnOH').classList.toggle('active', m === 'oh');
+  document.getElementById('rngDelay').value = 0;
+  userPol = false;
+  updatePolBtn();
+  if (m === 'snare') {
+    targetDelay = 0.0;
+    targetPol = true;
+    document.getElementById('drumFeedback').className = 'callout warn';
+    document.getElementById('drumFeedback').innerHTML = '<strong>Snare Top vs. Bottom:</strong> Notice how the blue and amber waves are mirror images at <code>0 ms</code>. Toggle <em>Polarity Invert Mic 2</em>!';
+  } else {
+    targetDelay = 4.35;
+    targetPol = false;
+    document.getElementById('drumFeedback').className = 'callout warn';
+    document.getElementById('drumFeedback').innerHTML = '<strong>Snare vs. Overheads (1.5 m):</strong> The overhead mic arrives <code>4.35 ms</code> late. Nudge Mic 1 forward to align the initial transient peaks!';
+  }
+  updateDrum();
+}
+
+function togglePol() {
+  userPol = !userPol;
+  updatePolBtn();
+  updateDrum();
+}
+
+function updatePolBtn() {
+  const b = document.getElementById('btnPol');
+  b.textContent = `Polarity Invert Mic 2: ${userPol ? 'ON (180\u00B0)' : 'OFF'}`;
+  b.classList.toggle('active', userPol);
+  document.getElementById('lblPol').textContent = userPol ? 'Inverted (180\u00B0)' : 'Normal (0\u00B0)';
+}
+
+function snareWave(tSec) {
+  if (tSec < 0) return 0;
+  // 190 Hz shell fundamental + decaying transient
+  return Math.exp(-tSec * 140) * Math.sin(2 * Math.PI * 190 * tSec);
+}
+
+function updateDrum() {
+  const dMs = Number(document.getElementById('rngDelay').value);
+  document.getElementById('lblDelay').textContent = `${dMs.toFixed(2)} ms (${Math.round(dMs * 48)} samples)`;
+
+  const ok = Math.abs(dMs - targetDelay) <= 0.15 && (userPol === targetPol);
+  document.getElementById('sumDot').style.background = ok ? 'var(--good)' : 'var(--bad)';
+
+  const canvas = document.getElementById('drumCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height, mid = h / 2;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = '#334155'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(w, mid); ctx.stroke();
+
+  const polSign = (userPol !== targetPol) ? -1 : 1;
+  const winMs = 16;
+
+  function plot(col, lw, fn) {
+    ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath();
+    for (let x = 0; x < w; x++) {
+      const tMs = (x / w) * winMs - 2; // start at -2 ms
+      const py = mid - fn(tMs) * (h * 0.25);
+      if (x === 0) ctx.moveTo(x, py); else ctx.lineTo(x, py);
+    }
+    ctx.stroke();
+  }
+
+  const m1 = (t) => snareWave((t - dMs) / 1000);
+  const m2 = (t) => polSign * snareWave((t - targetDelay) / 1000);
+  const sum = (t) => (m1(t) + m2(t)) * 0.7;
+
+  plot('rgba(37, 99, 235, 0.85)', 2, m1);
+  plot('rgba(217, 119, 6, 0.85)', 2, m2);
+  plot(ok ? '#34d399' : '#f87171', 2.8, sum);
+}
+
+function playSnare(which) {
+  ensureAudio();
+  const sr = audioCtx.sampleRate, dur = 0.28;
+  const buf = audioCtx.createBuffer(1, Math.floor(sr * dur), sr);
+  const data = buf.getChannelData(0);
+  const dSec = Number(document.getElementById('rngDelay').value) / 1000;
+  const tSec = targetDelay / 1000;
+  const polSign = (userPol !== targetPol) ? -1 : 1;
+
+  for (let i = 0; i < data.length; i++) {
+    const t = i / sr;
+    const n = (Math.random() * 2 - 1) * Math.exp(-t * 28) * 0.18; // snare wires
+    const s1 = snareWave(t - dSec) * 0.5 + n;
+    const s2 = polSign * snareWave(t - tSec) * 0.5 + (mode === 'snare' ? n * 1.1 : n * 0.7);
+    if (which === 'm1') data[i] = s1 * 0.6;
+    else if (which === 'm2') data[i] = s2 * 0.6;
+    else data[i] = (s1 + s2) * 0.45;
+  }
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf; src.connect(audioCtx.destination); src.start();
+}
+
+function checkDrum() {
+  const dMs = Number(document.getElementById('rngDelay').value);
+  const box = document.getElementById('drumFeedback');
+  const timeOk = Math.abs(dMs - targetDelay) <= 0.15;
+  const polOk = (userPol === targetPol);
+
+  if (timeOk && polOk) {
+    box.className = 'callout';
+    box.innerHTML = '<strong>Aligned!</strong> Both snare transients peak together in phase, delivering maximum 190 Hz chest thump and crisp snare wire snap.';
+  } else {
+    box.className = 'callout bad';
+    box.innerHTML = `<strong>Not quite:</strong> ${!polOk ? 'Check <strong>Polarity Invert (&Oslash;)</strong> on Mic 2. ' : ''}${!timeOk ? `Adjust Mic 1 Delay closer to <code>${targetDelay.toFixed(2)} ms</code>.` : ''}`;
+  }
+}
+
+function solveDrum() {
+  document.getElementById('rngDelay').value = targetDelay;
+  userPol = targetPol;
+  updatePolBtn();
+  updateDrum();
+  checkDrum();
+}
+
+setMode('snare');
+</script>
+</body>
+</html>

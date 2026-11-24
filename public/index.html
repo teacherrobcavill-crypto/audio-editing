@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>A-Level Music Technology (Component 4): Audio Editing</title>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-alt: #f1f5f9;
+    --ink: #0f172a;
+    --muted: #475569;
+    --border: #e2e8f0;
+    --prep: #2563eb;
+    --time: #0d9488;
+    --pitch: #7c3aed;
+    --phase: #d97706;
+    --creative: #16a34a;
+    --danger: #dc2626;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 14px rgba(15, 23, 42, 0.04);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+  }
+  .container { max-width: 1120px; margin: 0 auto; padding: 24px 20px 64px; }
+
+  /* Header */
+  header.hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #0f766e 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  header.hero h1 { margin: 0 0 8px; font-size: 28px; line-height: 1.2; }
+  header.hero p { margin: 0; color: #cbd5e1; max-width: 700px; font-size: 15px; }
+  .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn:hover { background: var(--surface-alt); }
+  .btn-primary {
+    background: #0d9488;
+    border-color: #0d9488;
+    color: #fff;
+  }
+  .btn-primary:hover { background: #0f766e; }
+  .btn-ghost {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.28);
+    color: #fff;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.22); }
+  .btn.active {
+    background: #0f172a;
+    color: #fff;
+    border-color: #0f172a;
+  }
+
+  /* Quick nav */
+  nav.toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 7px 13px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+  }
+  nav.toc a:hover { color: var(--ink); border-color: #94a3b8; }
+
+  /* Cards & Sections */
+  section.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 26px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+  section.card h2 {
+    margin: 0 0 6px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  p.lead { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+
+  /* SVG Diagram */
+  .diagram-wrap {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    overflow-x: auto;
+  }
+  .diagram-wrap svg { width: 100%; height: auto; min-width: 720px; display: block; }
+  .svg-node { cursor: pointer; transition: opacity 0.15s ease; }
+  .svg-node:hover { opacity: 0.85; }
+  .node-detail {
+    margin-top: 14px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #f8fafc;
+    font-size: 14px;
+  }
+
+  /* Grid & Controls */
+  .lab-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .lab-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .lab-grid { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .panel h3 { margin: 0 0 10px; font-size: 15px; }
+  canvas.scope {
+    width: 100%;
+    height: 200px;
+    background: #0f172a;
+    border-radius: 8px;
+    display: block;
+    margin-bottom: 12px;
+  }
+  .control-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  .control-row label {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .control-row input[type="range"] { width: 100%; accent-color: #0d9488; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .callout {
+    padding: 12px 14px;
+    border-radius: 8px;
+    border-left: 4px solid #0d9488;
+    background: #f0fdfa;
+    font-size: 13.5px;
+    margin-top: 12px;
+  }
+  .callout.warn {
+    border-left-color: #d97706;
+    background: #fffbeb;
+  }
+
+  /* Tables & Grids */
+  .cards-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+  }
+  .mini-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    background: var(--surface-alt);
+  }
+  .mini-card h3 { margin: 0 0 6px; font-size: 15px; }
+  .mini-card p, .mini-card ul { margin: 0; font-size: 13.5px; color: var(--muted); }
+  .mini-card ul { padding-left: 18px; margin-top: 6px; }
+
+  table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin-top: 8px;
+  }
+  table.spec-table th, table.spec-table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  table.spec-table th {
+    background: var(--surface-alt);
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+  .tag.aos1 { background: #dbeafe; color: #1e40af; }
+  .tag.aos2 { background: #ccfbf1; color: #115e59; }
+  .tag.aos3 { background: #fef3c7; color: #92400e; }
+
+  /* Exam Practice */
+  .exam-q {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    background: #fcfcfd;
+  }
+  .exam-q-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .marks-pill {
+    background: #0f172a;
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  details.markscheme {
+    margin-top: 10px;
+    background: var(--surface-alt);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13.5px;
+  }
+  details.markscheme summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: #0f766e;
+  }
+  details.markscheme ul { margin: 8px 0 2px; padding-left: 20px; }
+
+  footer.rag-footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12.5px;
+    margin-top: 32px;
+  }
+  code {
+    background: #e2e8f0;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  @media print {
+    .hero-actions, nav.toc, .lab-tabs, button { display: none !important; }
+    section.card { box-shadow: none; break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="hero">
+    <div>
+      <div class="hero-badge">Pearson Edexcel A-Level Music Technology (9MT0/04) &bull; Component 4</div>
+      <h1>Audio Editing: Practical &amp; Analytical Mastery</h1>
+      <p>Complete Component 4 (Producing &amp; Analysing) guide covering corrective &amp; creative DAW editing, zero-crossing fades, comping, time-stretching, pitch manipulation, phase alignment, and tape-to-DAW evolution.</p>
+    </div>
+    <div class="hero-actions">
+      <button class="btn btn-ghost" onclick="window.print()">Print / Save PDF</button>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <a href="#workflow">1. Editing Workflow</a>
+    <a href="#interactive-lab">2. Interactive Editing Lab</a>
+    <a href="#core-techniques">3. Core DAW Techniques</a>
+    <a href="#aos-context">4. AoS 2 &amp; AoS 3 Theory</a>
+    <a href="#terminology">5. Mark-Scheme Terminology</a>
+    <a href="#exam-practice">6. Component 4 Exam Practice</a>
+  </nav>
+
+  <section class="card" style="background:linear-gradient(to right,#f8fafc,#eff6ff); border-color:#bfdbfe;">
+    <h2 style="font-size:17px; margin-bottom:10px;">Interactive Scenarios &amp; Revision Games</h2>
+    <div style="display:flex; flex-wrap:wrap; gap:10px;">
+      <a class="btn btn-primary" href="/bass_di_amp_phase_alignment" style="text-decoration:none;">Scenario 1: Bass DI + Amp Phase Lab</a>
+      <a class="btn" href="/drum_phase_alignment" style="text-decoration:none;">Scenario 2: Drum Kit Phase (Snare &amp; OH)</a>
+      <a class="btn" href="/vocal_comping_crossfades" style="text-decoration:none;">Scenario 3: Vocal Comping &amp; Crossfades</a>
+      <a class="btn" href="/drum_time_correction" style="text-decoration:none;">Scenario 4: Drum Time-Correction &amp; Flex</a>
+      <a class="btn" href="/vocal_pitch_correction" style="text-decoration:none;">Scenario 5: Flex Pitch &amp; Auto-Tune</a>
+      <a class="btn" href="/audio_editing_flashcards" style="text-decoration:none; border-color:#2563eb; color:#1d4ed8;">Terminology Flashcard Game</a>
+    </div>
+  </section>
+
+  <!-- SECTION 1: WORKFLOW -->
+  <section id="workflow" class="card">
+    <h2><span class="section-num">1</span> Component 4 Audio Editing Workflow</h2>
+    <p class="lead">In Section A of Component 4, candidates receive raw stems and must apply non-destructive edits in a logical order before mixing. Click any stage below to inspect the exam expectations.</p>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 940 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Component 4 audio editing workflow">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#0f172a"/>
+          </marker>
+        </defs>
+
+        <line x1="176" y1="88" x2="206" y2="88" stroke="#0f172a" stroke-width="2.5" marker-end="url(#arr)"/>
+        <line x1="358" y1="88" x2="388" y2="88" stroke="#0f172a" stroke-width="2.5" marker-end="url(#arr)"/>
+        <line x1="540" y1="88" x2="570" y2="88" stroke="#0f172a" stroke-width="2.5" marker-end="url(#arr)"/>
+        <line x1="722" y1="88" x2="752" y2="88" stroke="#0f172a" stroke-width="2.5" marker-end="url(#arr)"/>
+
+        <g class="svg-node" onclick="selectStage('cleanup')">
+          <rect x="16" y="40" width="160" height="96" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2.5"/>
+          <text x="96" y="68" text-anchor="middle" font-size="13.5" font-weight="800" fill="#1e40af">1. Clean &amp; Trim</text>
+          <text x="96" y="88" text-anchor="middle" font-size="11.5" fill="#1e3a8a">Top &amp; Tail • Zero Cross</text>
+          <text x="96" y="106" text-anchor="middle" font-size="11" fill="#475569">Fades • Strip Silence</text>
+        </g>
+
+        <g class="svg-node" onclick="selectStage('comp')">
+          <rect x="208" y="40" width="150" height="96" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2.5"/>
+          <text x="283" y="68" text-anchor="middle" font-size="13.5" font-weight="800" fill="#115e59">2. Comping</text>
+          <text x="283" y="88" text-anchor="middle" font-size="11.5" fill="#134e4a">Multi-Take Selection</text>
+          <text x="283" y="106" text-anchor="middle" font-size="11" fill="#475569">Equal-Power Crossfades</text>
+        </g>
+
+        <g class="svg-node" onclick="selectStage('phase')">
+          <rect x="390" y="40" width="150" height="96" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2.5"/>
+          <text x="465" y="68" text-anchor="middle" font-size="13.5" font-weight="800" fill="#b45309">3. Phase Align</text>
+          <text x="465" y="88" text-anchor="middle" font-size="11.5" fill="#92400e">Multi-Mic &amp; DI/Amp</text>
+          <text x="465" y="106" text-anchor="middle" font-size="11" fill="#475569">180° Polarity • Nudge</text>
+        </g>
+
+        <g class="svg-node" onclick="selectStage('timing')">
+          <rect x="572" y="40" width="150" height="96" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2.5"/>
+          <text x="647" y="68" text-anchor="middle" font-size="13.5" font-weight="800" fill="#5b21b6">4. Time &amp; Pitch</text>
+          <text x="647" y="88" text-anchor="middle" font-size="11.5" fill="#6d28d9">Flex/Elastic • Melodyne</text>
+          <text x="647" y="106" text-anchor="middle" font-size="11" fill="#475569">Formant • Quantise</text>
+        </g>
+
+        <g class="svg-node" onclick="selectStage('creative')">
+          <rect x="754" y="40" width="170" height="96" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2.5"/>
+          <text x="839" y="68" text-anchor="middle" font-size="13.5" font-weight="800" fill="#166534">5. Creative &amp; Bounce</text>
+          <text x="839" y="88" text-anchor="middle" font-size="11.5" fill="#14532d">Reverse • Stutter • Gain</text>
+          <text x="839" y="106" text-anchor="middle" font-size="11" fill="#475569">WAV Export (24-bit/16-bit)</text>
+        </g>
+
+        <text x="470" y="176" text-anchor="middle" font-size="12" font-weight="600" fill="#475569">Always work non-destructively first &mdash; keep original stems intact and export exact required bar ranges as WAV.</text>
+      </svg>
+    </div>
+
+    <div id="stageDetail" class="node-detail">
+      <strong>1. Clean &amp; Trim:</strong> Remove count-ins, headphone bleed, clicks, and dead air ("top and tail"). Always cut at <strong>zero-crossing points</strong> (where amplitude = 0) and apply short fade-ins/fade-outs (5–15 ms) to prevent audible clicks.
+    </div>
+  </section>
+
+  <!-- SECTION 2: INTERACTIVE LAB -->
+  <section id="interactive-lab" class="card">
+    <h2><span class="section-num">2</span> Interactive Audio Editing Lab (Canvas + Web Audio)</h2>
+    <p class="lead">Hear and visualise the exact acoustic phenomena tested in Component 4: zero-crossing clicks vs. smooth crossfades, and comb filtering from phase misalignment.</p>
+
+    <div class="lab-tabs">
+      <button class="btn active" id="tabZero" onclick="switchLab('zero')">A. Zero-Crossing &amp; Crossfade Simulator</button>
+      <button class="btn" id="tabPhase" onclick="switchLab('phase')">B. Phase Alignment &amp; Comb Filtering Lab</button>
+    </div>
+
+    <!-- LAB A: ZERO CROSSING -->
+    <div id="labZero" class="lab-grid">
+      <div class="panel">
+        <h3>Waveform Splice Visualiser</h3>
+        <canvas id="zeroCanvas" class="scope" width="540" height="200"></canvas>
+        <div class="pill-row">
+          <button class="btn btn-primary" onclick="playSpliceDemo()">Play Splice Audio</button>
+          <button class="btn" onclick="setZeroPreset('bad')">Bad Cut (Non-Zero Click)</button>
+          <button class="btn" onclick="setZeroPreset('good')">Clean Cut (Zero-Cross + Fade)</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Edit Parameters</h3>
+        <div class="control-row">
+          <label><span>Splice Offset (Phase Angle)</span><span id="lblOffset">90&deg; (Non-Zero!)</span></label>
+          <input type="range" id="rngOffset" min="0" max="180" value="90" oninput="updateZeroLab()" />
+        </div>
+        <div class="control-row">
+          <label><span>Crossfade Length</span><span id="lblFade">0 ms</span></label>
+          <input type="range" id="rngFade" min="0" max="40" value="0" oninput="updateZeroLab()" />
+        </div>
+        <div id="zeroCallout" class="callout warn">
+          <strong>Discontinuity detected:</strong> Cutting away from <code>0 V</code> creates an instantaneous step change in amplitude, producing broadband high-frequency energy heard as a sharp <strong>click/pop</strong>.
+        </div>
+      </div>
+    </div>
+
+    <!-- LAB B: PHASE ALIGNMENT -->
+    <div id="labPhase" class="lab-grid" style="display:none;">
+      <div class="panel">
+        <h3>Summed Multi-Mic Waveform (Mic 1 + Mic 2)</h3>
+        <canvas id="phaseCanvas" class="scope" width="540" height="200"></canvas>
+        <div class="pill-row">
+          <button class="btn btn-primary" onclick="playPhaseDemo()">Play Summed Tone</button>
+          <button class="btn" id="btnPolarity" onclick="togglePolarity()">Polarity Invert Mic 2: OFF</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Time-of-Arrival / Sample Delay</h3>
+        <div class="control-row">
+          <label><span>Mic 2 Delay Offset</span><span id="lblDelay">1.14 ms (180&deg; @ 440 Hz)</span></label>
+          <input type="range" id="rngDelay" min="0" max="2.27" step="0.01" value="1.14" oninput="updatePhaseLab()" />
+        </div>
+        <div id="phaseCallout" class="callout warn">
+          <strong>Destructive Interference:</strong> A half-wavelength delay (<code>1.14 ms</code> at 440 Hz) puts Mic 2 <strong>180&deg; out of phase</strong>, cancelling the fundamental and creating hollow <strong>comb filtering</strong>. Nudge to <code>0 ms</code> or invert polarity!
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: CORE DAW TECHNIQUES -->
+  <section id="core-techniques" class="card">
+    <h2><span class="section-num">3</span> All Component 4 Audio Editing Competencies</h2>
+    <p class="lead">Every practical skill examiners test in Section A (and expect you to evaluate in Section B).</p>
+
+    <div class="cards-3">
+      <div class="mini-card">
+        <h3>1. Trimming, Fades &amp; Strip Silence</h3>
+        <p>Remove unwanted studio noise, breaths, and bleed between phrases.</p>
+        <ul>
+          <li><strong>Top &amp; Tail:</strong> Trim start/end of regions cleanly.</li>
+          <li><strong>Zero-Crossing:</strong> Cut where waveform crosses the centre line (<code>0</code>).</li>
+          <li><strong>Linear vs. Equal-Power Crossfade:</strong> Use <em>equal-power</em> (curved) for uncorrelated audio to avoid a mid-fade volume dip; <em>linear</em> for phase-locked material.</li>
+        </ul>
+      </div>
+
+      <div class="mini-card">
+        <h3>2. Multi-Take Comping</h3>
+        <p>Assemble a "composite" master performance from multiple recorded takes.</p>
+        <ul>
+          <li>Select best phrasing, tuning, and energy per line/bar.</li>
+          <li>Place edit boundaries in natural gaps/breaths rather than mid-vowel.</li>
+          <li>Match clip gain and apply short crossfades across every splice.</li>
+        </ul>
+      </div>
+
+      <div class="mini-card">
+        <h3>3. Time Correction &amp; Quantisation</h3>
+        <p>Fix rushing/dragging live performances or lock loops to project tempo.</p>
+        <ul>
+          <li><strong>Transient Slicing:</strong> Split at drum hits, quantise to grid, and fill gaps with crossfades.</li>
+          <li><strong>Flex Time / Elastic Audio:</strong> Move transient markers non-destructively. Choose the right algorithm (<em>Rhythmic/Slicing</em> for drums, <em>Monophonic</em> for bass/vocals, <em>Polyphonic</em> for chords).</li>
+          <li><strong>Artifacts to avoid:</strong> Pre-echo, flamming, metallic smearing from extreme stretching.</li>
+        </ul>
+      </div>
+
+      <div class="mini-card">
+        <h3>4. Pitch Correction &amp; Formants</h3>
+        <p>Correct intonation or create deliberate vocal effects (Melodyne / VariAudio / Flex Pitch).</p>
+        <ul>
+          <li><strong>Pitch Centre:</strong> Pulls average note pitch toward equal temperament.</li>
+          <li><strong>Pitch Drift / Vibrato:</strong> Preserves natural expressiveness (avoid 0% drift unless hard-tuned pop effect is wanted).</li>
+          <li><strong>Formant Shift:</strong> Keep formants preserved during corrective tuning to avoid unnatural "chipmunk" or "monster" timbre.</li>
+        </ul>
+      </div>
+
+      <div class="mini-card">
+        <h3>5. Phase Alignment &amp; Polarity</h3>
+        <p>Fix hollow, thin sound on multi-mic recordings (drums, acoustic guitar, DI + amp).</p>
+        <ul>
+          <li><strong>Polarity Invert (&Oslash; / 180&deg;):</strong> Flips positive/negative voltage—instant fix for opposite-facing mics (e.g., snare top vs. snare bottom).</li>
+          <li><strong>Sample-Accurate Nudging:</strong> Aligns waveforms when mics are at different distances (e.g., overheads vs. close mics, or DI vs. mic'd cab), eliminating <strong>comb filtering</strong>.</li>
+        </ul>
+      </div>
+
+      <div class="mini-card">
+        <h3>6. Creative Editing &amp; Gain Staging</h3>
+        <p>Use editing as a compositional and dynamic tool (AoS 1).</p>
+        <ul>
+          <li><strong>Clip / Region Gain:</strong> Level out loud/quiet words <em>before</em> compression so the compressor works evenly.</li>
+          <li><strong>Reverse Audio:</strong> Reverse cymbal crashes or reverb tails into downbeats.</li>
+          <li><strong>Stutter / Chopping:</strong> Duplicate 1/16th or 1/32nd slices rhythmically; resample and pitch-shift.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: AoS 2 & AoS 3 THEORY -->
+  <section id="aos-context" class="card">
+    <h2><span class="section-num">4</span> Underpinning Theory: AoS 2 &amp; AoS 3</h2>
+    <p class="lead">Component 4 connects practical DAW editing to digital audio principles (AoS 2) and historical tape techniques (AoS 3).</p>
+
+    <table class="spec-table">
+      <thead>
+        <tr>
+          <th>Area of Study</th>
+          <th>Core Concept</th>
+          <th>What You Must Explain in the Exam</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag aos1">AoS 1</span></td>
+          <td><strong>Non-Destructive vs. Destructive Editing</strong></td>
+          <td>DAW region edits (trims, fades, Flex markers) are <strong>non-destructive</strong>—they store edit pointers/metadata without altering the source WAV on disk. Operations like <em>Bounce in Place</em>, <em>Normalise</em> (in an audio file editor), or exporting a mix are <strong>destructive</strong> / permanent.</td>
+        </tr>
+        <tr>
+          <td><span class="tag aos2">AoS 2</span></td>
+          <td><strong>Sample Rate &amp; Bit Depth</strong></td>
+          <td>Higher sample rates (e.g. 48 kHz / 96 kHz) give finer time resolution for sample-accurate phase nudging and cleaner time-stretching. Higher bit depth (24-bit vs. 16-bit) gives a lower noise floor (~144 dB dynamic range) when boosting quiet regions via clip gain; apply <strong>dither</strong> when bouncing down to 16-bit.</td>
+        </tr>
+        <tr>
+          <td><span class="tag aos2">AoS 2</span></td>
+          <td><strong>Varispeed vs. Time-Stretching</strong></td>
+          <td><strong>Varispeed</strong> changes playback speed and pitch together (like speeding up tape: +100% speed = +1 octave). Modern <strong>time-stretching</strong> decouples time and pitch using granular/FFT/phase-vocoder algorithms.</td>
+        </tr>
+        <tr>
+          <td><span class="tag aos3">AoS 3</span></td>
+          <td><strong>Tape Splicing &rarr; DAW Editing</strong></td>
+          <td>Before DAWs, engineers edited 1/4" or 2" magnetic tape <strong>destructively</strong> using a <strong>chinagraph pencil</strong> to mark transients, a <strong>splicing block</strong> (45&deg; or 90&deg; groove), a <strong>razor blade</strong>, and <strong>splicing tape</strong>. A 45&deg; diagonal cut acted as a physical crossfade to prevent clicks.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 5: TERMINOLOGY -->
+  <section id="terminology" class="card">
+    <h2><span class="section-num">5</span> Edexcel Mark-Scheme Terminology Reference</h2>
+    <p class="lead">Use precise technical terms—vague descriptions like "make it sound smoother" or "fix the timing" lose AO1/AO3 marks.</p>
+
+    <table class="spec-table">
+      <thead>
+        <tr>
+          <th>Term</th>
+          <th>Exam-Ready Definition</th>
+          <th>Typical Component 4 Application</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Zero-Crossing Point</strong></td>
+          <td>The point where an audio waveform's amplitude passes through 0 V.</td>
+          <td>Cutting here prevents DC step discontinuities and audible clicks.</td>
+        </tr>
+        <tr>
+          <td><strong>Equal-Power Crossfade</strong></td>
+          <td>A fade-out/fade-in curve (often logarithmic/S-curve) that maintains constant perceived loudness across the overlap.</td>
+          <td>Joining two vocal takes during comping without a volume dip.</td>
+        </tr>
+        <tr>
+          <td><strong>Comb Filtering</strong></td>
+          <td>Series of regular notches and peaks in the frequency spectrum caused by summing a signal with a slightly delayed copy of itself.</td>
+          <td>Diagnosing and fixing phase misalignment between drum overheads and close mics.</td>
+        </tr>
+        <tr>
+          <td><strong>Polarity Inversion (&Oslash;)</strong></td>
+          <td>Flipping a waveform 180&deg; (positive samples become negative and vice versa) without shifting it in time.</td>
+          <td>Correcting out-of-phase snare bottom mic relative to snare top mic.</td>
+        </tr>
+        <tr>
+          <td><strong>Formant Preservation</strong></td>
+          <td>Maintaining the fixed resonant frequencies of a vocal tract/instrument body when shifting fundamental pitch.</td>
+          <td>Correcting vocal pitch by 2–3 semitones without unnatural timbre shifts.</td>
+        </tr>
+        <tr>
+          <td><strong>Transient Detection</strong></td>
+          <td>Identifying sharp, high-amplitude onset peaks (e.g. drum hits) to place warp/flex markers.</td>
+          <td>Quantising live drums or slicing a breakbeat to match project BPM.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 6: EXAM PRACTICE -->
+  <section id="exam-practice" class="card">
+    <h2><span class="section-num">6</span> Edexcel Component 4 Exam Practice</h2>
+    <p class="lead">Practise answering Section A/B style questions with precise AO1–AO4 detail. Expand each mark scheme to self-assess.</p>
+
+    <div class="exam-q">
+      <div class="exam-q-head">
+        <strong>Question 1 (AO1/AO2 — Comping &amp; Click Removal)</strong>
+        <span class="marks-pill">4 marks</span>
+      </div>
+      <p style="margin:0;">A student has comped a lead vocal from three takes, but audible clicks occur at the edit boundaries and the vocal dips in level between phrases. Explain how to resolve both issues in a DAW.</p>
+      <details class="markscheme">
+        <summary>Show Mark Scheme</summary>
+        <ul>
+          <li>Move edit points to natural gaps/silences or <strong>zero-crossing points</strong> where amplitude is 0 <strong>(1)</strong>.</li>
+          <li>Apply short <strong>crossfades</strong> (e.g. 5–20 ms) across each region boundary to eliminate step clicks <strong>(1)</strong>.</li>
+          <li>Use an <strong>equal-power crossfade</strong> curve rather than a linear fade so perceived loudness stays constant across uncorrelated takes <strong>(1)</strong>.</li>
+          <li>Adjust <strong>clip/region gain</strong> (or volume automation) on quieter takes to match overall level before compression <strong>(1)</strong>.</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="exam-q">
+      <div class="exam-q-head">
+        <strong>Question 2 (AO2/AO3 — Multi-Mic Phase Alignment)</strong>
+        <span class="marks-pill">5 marks</span>
+      </div>
+      <p style="margin:0;">A bass guitar was recorded simultaneously via a DI box and a microphone placed 60 cm in front of the amplifier cabinet. When both tracks are played together, the low end sounds thin and hollow. Explain the cause and describe two editing steps to fix it.</p>
+      <details class="markscheme">
+        <summary>Show Mark Scheme</summary>
+        <ul>
+          <li><strong>Cause:</strong> Acoustic propagation delay (~1.7 ms at 60 cm) causes time-of-arrival differences between the DI and mic signals <strong>(1)</strong>, resulting in phase cancellation / <strong>comb filtering</strong> when summed <strong>(1)</strong>.</li>
+          <li><strong>Step 1 (Time Alignment):</strong> Zoom in to sample level on the waveform and nudge/delay the DI track forward (or pull the mic track earlier) so the first positive transient peaks align <strong>(2)</strong>.</li>
+          <li><strong>Step 2 (Polarity Check):</strong> Test <strong>180&deg; polarity inversion (&Oslash;)</strong> on one channel to check whether the speaker/mic wiring was inverted, keeping whichever setting maximises low-end weight <strong>(1)</strong>.</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="exam-q">
+      <div class="exam-q-head">
+        <strong>Question 3 (AO3/AO4 — Time-Stretching &amp; Pitch Correction Evaluation)</strong>
+        <span class="marks-pill">6 marks</span>
+      </div>
+      <p style="margin:0;">A candidate is asked to tighten a slightly out-of-time, flat backing vocal harmony in a 120 BPM pop track. They apply rhythmic beat-slicing to the vocal and shift pitch up by +4 semitones with formant preservation turned off. Evaluate the sonic consequences and recommend better editing choices.</p>
+      <details class="markscheme">
+        <summary>Show Mark Scheme</summary>
+        <ul>
+          <li><strong>Time-stretching algorithm:</strong> Rhythmic/slicing mode is designed for percussive transients and will cause audible gaps, glitches, or stuttering on sustained vocal notes <strong>(1)</strong>. Switch to a <strong>Monophonic</strong> Flex/Elastic Audio algorithm and warp only out-of-time syllable onsets <strong>(1)</strong>.</li>
+          <li><strong>Formant preservation:</strong> Shifting +4 semitones without formant preservation shifts vocal tract resonances upward, producing an unnatural "chipmunk" timbre <strong>(1)</strong>; enable <strong>formant preservation</strong> to retain natural vocal character <strong>(1)</strong>.</li>
+          <li><strong>Pitch drift &amp; vibrato:</strong> Apply moderate pitch-centre correction while retaining natural vibrato/drift so the harmony blends organically <strong>(1)</strong>, and verify against the lead vocal for smooth harmonic tuning <strong>(1)</strong>.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <footer class="rag-footer">
+    A-Level Music Technology (9MT0/04) Component 4 Audio Editing Resource &bull; Aligned with Pearson Edexcel AoS 1, AoS 2 &amp; AoS 3.
+  </footer>
+
+</div>
+
+<script>
+// --- 1. Interactive Workflow Stage Details ---
+const STAGE_INFO = {
+  cleanup: "<strong>1. Clean &amp; Trim:</strong> Remove count-ins, headphone bleed, clicks, and dead air (\"top and tail\"). Always cut at <strong>zero-crossing points</strong> (where amplitude = 0) and apply short fade-ins/fade-outs (5–15 ms) to prevent audible clicks.",
+  comp: "<strong>2. Comping:</strong> Audition multiple takes in playlists/take folders, select the strongest phrases, place edits in natural breaths, and bridge splices with <strong>equal-power crossfades</strong>.",
+  phase: "<strong>3. Phase Alignment:</strong> Check multi-mic recordings (drum overheads/close mics, snare top/bottom, DI + amp). Zoom to sample level to align transients and test <strong>180&deg; polarity inversion</strong> to eliminate comb filtering.",
+  timing: "<strong>4. Time &amp; Pitch:</strong> Tighten timing with Flex Time / Elastic Audio using the right algorithm (Rhythmic vs. Monophonic vs. Polyphonic). Correct pitch in Melodyne/VariAudio with <strong>formant preservation</strong> enabled.",
+  creative: "<strong>5. Creative Edits &amp; Bounce:</strong> Apply clip gain before compression, add creative reverse swells or stutters, and export the exact bar range requested as an uncompressed WAV (24-bit or 16-bit + dither)."
+};
+function selectStage(id) {
+  document.getElementById('stageDetail').innerHTML = STAGE_INFO[id] || '';
+}
+
+// --- 2. Interactive Audio Editing Lab ---
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+let currentLab = 'zero';
+function switchLab(tab) {
+  currentLab = tab;
+  document.getElementById('labZero').style.display = tab === 'zero' ? 'grid' : 'none';
+  document.getElementById('labPhase').style.display = tab === 'phase' ? 'grid' : 'none';
+  document.getElementById('tabZero').classList.toggle('active', tab === 'zero');
+  document.getElementById('tabPhase').classList.toggle('active', tab === 'phase');
+  if (tab === 'zero') updateZeroLab(); else updatePhaseLab();
+}
+
+// Lab A: Zero-Crossing & Crossfade
+function setZeroPreset(type) {
+  if (type === 'bad') {
+    document.getElementById('rngOffset').value = 90;
+    document.getElementById('rngFade').value = 0;
+  } else {
+    document.getElementById('rngOffset').value = 0;
+    document.getElementById('rngFade').value = 15;
+  }
+  updateZeroLab();
+}
+
+function updateZeroLab() {
+  const deg = Number(document.getElementById('rngOffset').value);
+  const fadeMs = Number(document.getElementById('rngFade').value);
+  document.getElementById('lblOffset').textContent = deg === 0 || deg === 180 ? `${deg}\u00B0 (Zero Crossing)` : `${deg}\u00B0 (Non-Zero!)`;
+  document.getElementById('lblFade').textContent = `${fadeMs} ms`;
+
+  const callout = document.getElementById('zeroCallout');
+  if ((deg > 10 && deg < 170) && fadeMs < 5) {
+    callout.className = 'callout warn';
+    callout.innerHTML = '<strong>Discontinuity detected:</strong> Cutting away from <code>0 V</code> creates an instantaneous step change in amplitude, producing broadband high-frequency energy heard as a sharp <strong>click/pop</strong>.';
+  } else if (fadeMs >= 5) {
+    callout.className = 'callout';
+    callout.innerHTML = `<strong>Clean splice:</strong> A <code>${fadeMs} ms</code> crossfade smoothly transitions between regions, eliminating any step discontinuity even away from zero crossings.`;
+  } else {
+    callout.className = 'callout';
+    callout.innerHTML = '<strong>Zero-crossing cut:</strong> Both waveforms meet at <code>0 V</code>, avoiding an abrupt amplitude jump.';
+  }
+
+  const canvas = document.getElementById('zeroCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height, mid = h / 2;
+  ctx.clearRect(0, 0, w, h);
+
+  // Grid line (0V)
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(w, mid); ctx.stroke();
+
+  const spliceX = w / 2;
+  const fadePx = (fadeMs / 40) * 60;
+  const phaseRad = (deg * Math.PI) / 180;
+
+  // Draw crossfade zone
+  if (fadePx > 0) {
+    ctx.fillStyle = 'rgba(13, 148, 136, 0.18)';
+    ctx.fillRect(spliceX - fadePx, 0, fadePx * 2, h);
+  }
+
+  // Waveform
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = '#38bdf8';
+  ctx.beginPath();
+  for (let x = 0; x < w; x++) {
+    const t = (x - spliceX) * 0.055;
+    let y1 = Math.sin(t);
+    let y2 = Math.sin(t + phaseRad);
+    let val;
+    if (fadePx === 0) {
+      val = x < spliceX ? y1 : y2;
+    } else if (x < spliceX - fadePx) {
+      val = y1;
+    } else if (x > spliceX + fadePx) {
+      val = y2;
+    } else {
+      const mix = (x - (spliceX - fadePx)) / (2 * fadePx);
+      val = y1 * Math.cos(mix * Math.PI * 0.5) + y2 * Math.sin(mix * Math.PI * 0.5);
+    }
+    const py = mid - val * (h * 0.36);
+    if (x === 0) ctx.moveTo(x, py); else ctx.lineTo(x, py);
+  }
+  ctx.stroke();
+
+  // Splice marker
+  ctx.strokeStyle = '#f59e0b';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(spliceX, 10); ctx.lineTo(spliceX, h - 10); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function playSpliceDemo() {
+  ensureAudio();
+  const deg = Number(document.getElementById('rngOffset').value);
+  const fadeMs = Number(document.getElementById('rngFade').value);
+  const sr = audioCtx.sampleRate;
+  const dur = 0.6;
+  const buf = audioCtx.createBuffer(1, Math.floor(sr * dur), sr);
+  const data = buf.getChannelData(0);
+  const freq = 220;
+  const mid = Math.floor(data.length / 2);
+  const fadeSamples = Math.floor((fadeMs / 1000) * sr);
+  const phaseRad = (deg * Math.PI) / 180;
+
+  for (let i = 0; i < data.length; i++) {
+    const t = i / sr;
+    const y1 = Math.sin(2 * Math.PI * freq * t) * 0.35;
+    const y2 = Math.sin(2 * Math.PI * freq * t + phaseRad) * 0.35;
+    if (fadeSamples === 0) {
+      data[i] = i < mid ? y1 : y2;
+    } else if (i < mid - fadeSamples) {
+      data[i] = y1;
+    } else if (i > mid + fadeSamples) {
+      data[i] = y2;
+    } else {
+      const m = (i - (mid - fadeSamples)) / (2 * fadeSamples);
+      data[i] = y1 * Math.cos(m * Math.PI * 0.5) + y2 * Math.sin(m * Math.PI * 0.5);
+    }
+  }
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioCtx.destination);
+  src.start();
+}
+
+// Lab B: Phase Alignment & Comb Filtering
+let invertPolarity = false;
+function togglePolarity() {
+  invertPolarity = !invertPolarity;
+  const btn = document.getElementById('btnPolarity');
+  btn.textContent = `Polarity Invert Mic 2: ${invertPolarity ? 'ON (180\u00B0)' : 'OFF'}`;
+  btn.classList.toggle('active', invertPolarity);
+  updatePhaseLab();
+}
+
+function updatePhaseLab() {
+  const delayMs = Number(document.getElementById('rngDelay').value);
+  const freq = 440;
+  const periodMs = 1000 / freq; // 2.2727 ms
+  const phaseDeg = Math.round(((delayMs / periodMs) * 360 + (invertPolarity ? 180 : 0)) % 360);
+  document.getElementById('lblDelay').textContent = `${delayMs.toFixed(2)} ms (${phaseDeg}\u00B0 @ 440 Hz)`;
+
+  const callout = document.getElementById('phaseCallout');
+  const distFrom180 = Math.abs(phaseDeg - 180);
+  if (distFrom180 < 35) {
+    callout.className = 'callout warn';
+    callout.innerHTML = `<strong>Destructive Interference (${phaseDeg}&deg;):</strong> Mic 1 and Mic 2 are nearly opposite in phase, causing severe cancellation at 440 Hz and thin <strong>comb filtering</strong>.`;
+  } else if (phaseDeg < 25 || phaseDeg > 335) {
+    callout.className = 'callout';
+    callout.innerHTML = `<strong>Phase Coherent (${phaseDeg}&deg;):</strong> Mic 1 and Mic 2 reinforce each other cleanly (+6 dB coherent sum) with full low-mid body.`;
+  } else {
+    callout.className = 'callout';
+    callout.innerHTML = `<strong>Partial Phase Shift (${phaseDeg}&deg;):</strong> Some constructive/destructive interference across harmonics. Align transients to <code>0&deg;</code> for maximum punch.`;
+  }
+
+  const canvas = document.getElementById('phaseCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height, mid = h / 2;
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(w, mid); ctx.stroke();
+
+  const shiftRad = (delayMs / periodMs) * 2 * Math.PI;
+  const pol = invertPolarity ? -1 : 1;
+
+  // Mic 1 (faint)
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let x = 0; x < w; x++) {
+    const py = mid - Math.sin(x * 0.05) * (h * 0.18);
+    if (x === 0) ctx.moveTo(x, py); else ctx.lineTo(x, py);
+  }
+  ctx.stroke();
+
+  // Summed
+  ctx.strokeStyle = distFrom180 < 35 ? '#f87171' : '#34d399';
+  ctx.lineWidth = 2.8;
+  ctx.beginPath();
+  for (let x = 0; x < w; x++) {
+    const m1 = Math.sin(x * 0.05);
+    const m2 = pol * Math.sin(x * 0.05 - shiftRad);
+    const py = mid - (m1 + m2) * (h * 0.19);
+    if (x === 0) ctx.moveTo(x, py); else ctx.lineTo(x, py);
+  }
+  ctx.stroke();
+}
+
+function playPhaseDemo() {
+  ensureAudio();
+  const delayMs = Number(document.getElementById('rngDelay').value);
+  const sr = audioCtx.sampleRate;
+  const dur = 0.6;
+  const buf = audioCtx.createBuffer(1, Math.floor(sr * dur), sr);
+  const data = buf.getChannelData(0);
+  const freq = 440;
+  const delaySec = delayMs / 1000;
+  const pol = invertPolarity ? -1 : 1;
+
+  for (let i = 0; i < data.length; i++) {
+    const t = i / sr;
+    const env = Math.min(1, t * 40) * Math.min(1, (dur - t) * 40);
+    const m1 = Math.sin(2 * Math.PI * freq * t);
+    const m2 = pol * Math.sin(2 * Math.PI * freq * (t - delaySec));
+    data[i] = (m1 + m2) * 0.22 * env;
+  }
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioCtx.destination);
+  src.start();
+}
+
+// Initial draw
+updateZeroLab();
+</script>
+</body>
+</html>

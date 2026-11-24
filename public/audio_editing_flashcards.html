@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Component 4 Game: Audio Editing Terminology Flashcards</title>
+<style>
+  :root {
+    --bg: #f8fafc; --surface: #ffffff; --surface-alt: #f1f5f9;
+    --ink: #0f172a; --muted: #475569; --border: #e2e8f0;
+    --accent: #2563eb; --good: #16a34a; --warn: #d97706;
+    --radius: 14px;
+    --shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.55; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 64px; }
+  header.hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #2563eb 100%);
+    color: #fff; border-radius: 16px; padding: 24px 28px; margin-bottom: 20px; box-shadow: var(--shadow);
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;
+  }
+  .hero-badge { display: inline-flex; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+  header.hero h1 { margin: 0 0 6px; font-size: 25px; }
+  header.hero p { margin: 0; color: #cbd5e1; font-size: 14px; }
+  .btn { border: 1px solid var(--border); background: var(--surface); color: var(--ink); padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn:hover { background: var(--surface-alt); }
+  .btn-ghost { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.28); color: #fff; }
+  .btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+  .btn-good { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .btn-warn { background: #d97706; border-color: #d97706; color: #fff; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .progress-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; }
+  .progress-meta { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .bar-bg { width: 100%; height: 10px; background: var(--surface-alt); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; background: #16a34a; width: 0%; transition: width 0.25s ease; }
+
+  /* 3D Flip Card */
+  .scene { perspective: 1200px; height: 300px; margin-bottom: 18px; cursor: pointer; }
+  .card3d {
+    width: 100%; height: 100%; position: relative;
+    transform-style: preserve-3d; transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .card3d.flipped { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0; backface-visibility: hidden;
+    background: var(--surface); border: 2px solid var(--border); border-radius: 16px;
+    box-shadow: var(--shadow); padding: 28px 32px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+  }
+  .face.back { transform: rotateY(180deg); background: #f8fafc; border-color: #2563eb; }
+  .cat-tag {
+    position: absolute; top: 18px; left: 22px;
+    background: #dbeafe; color: #1e40af; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
+  }
+  .hint-tag { position: absolute; bottom: 16px; color: var(--muted); font-size: 12px; }
+  .term-title { font-size: 28px; font-weight: 800; margin: 0 0 8px; }
+  .def-text { font-size: 17px; font-weight: 600; margin: 0 0 12px; max-width: 680px; }
+  .ex-text { font-size: 13.5px; color: var(--muted); max-width: 640px; background: var(--surface-alt); padding: 10px 14px; border-radius: 8px; }
+
+  .controls { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="hero">
+    <div>
+      <div class="hero-badge">Component 4 Revision Game &bull; AO1 &amp; AO3 Terminology</div>
+      <h1>Audio Editing Flashcards</h1>
+      <p>Click the card (or press <strong>Space</strong>) to flip. Grade yourself to master every Edexcel mark-scheme term.</p>
+    </div>
+    <div>
+      <a class="btn btn-ghost" href="/">&larr; Main Hub</a>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="pill-row">
+      <button class="btn active" onclick="setCat('All', this)">All (16)</button>
+      <button class="btn" onclick="setCat('Editing & Fades', this)">Editing &amp; Fades</button>
+      <button class="btn" onclick="setCat('Phase & Polarity', this)">Phase &amp; Polarity</button>
+      <button class="btn" onclick="setCat('Time & Pitch', this)">Time &amp; Pitch</button>
+      <button class="btn" onclick="setCat('AoS 2 & 3 Theory', this)">AoS 2 &amp; 3 Theory</button>
+    </div>
+    <div class="pill-row">
+      <button class="btn" onclick="shuffleDeck()">Shuffle</button>
+      <button class="btn" onclick="resetProgress()">Reset</button>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="lblCount">Card 1 of 16</span>
+      <span id="lblScore">Mastered: 0 / 16 &bull; Streak: 0</span>
+    </div>
+    <div class="bar-bg"><div class="bar-fill" id="barFill"></div></div>
+  </div>
+
+  <div class="scene" onclick="flipCard()">
+    <div class="card3d" id="card3d">
+      <div class="face front">
+        <span class="cat-tag" id="frontCat">Category</span>
+        <h2 class="term-title" id="frontTerm">Term</h2>
+        <span class="hint-tag">Click card or press Space to reveal mark-scheme definition</span>
+      </div>
+      <div class="face back">
+        <span class="cat-tag" id="backCat">Category</span>
+        <p class="def-text" id="backDef">Definition</p>
+        <div class="ex-text" id="backEx">Exam Example</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="pill-row">
+      <button class="btn" onclick="prevCard()">&larr; Prev</button>
+      <button class="btn" onclick="nextCard()">Next &rarr;</button>
+    </div>
+    <div class="pill-row">
+      <button class="btn btn-warn" onclick="markCard(false)">Need Practice</button>
+      <button class="btn btn-good" onclick="markCard(true)">Got It! (+1)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CARDS = [
+  { id: 1, cat: "Editing & Fades", term: "Zero-Crossing Point", def: "The exact point where an audio waveform's amplitude passes through 0 V.", ex: "Exam use: Cutting regions at zero crossings prevents DC step discontinuities and audible clicks." },
+  { id: 2, cat: "Editing & Fades", term: "Equal-Power Crossfade", def: "A curved (logarithmic/S-curve) fade-out and fade-in that maintains constant perceived loudness across an edit boundary.", ex: "Exam use: Essential when comping uncorrelated vocal takes to avoid a mid-fade volume dip." },
+  { id: 3, cat: "Editing & Fades", term: "Comping (Composite Editing)", def: "Selecting and assembling the best phrases from multiple recorded takes into one seamless master performance.", ex: "Exam use: Place cuts in natural breaths, level-match with clip gain, and bridge every splice with crossfades." },
+  { id: 4, cat: "Editing & Fades", term: "Top & Tailing", def: "Trimming unwanted silence, count-ins, breath noise, or spill from the start and end of an audio region.", ex: "Exam use: Always follow top & tailing with short 5–15 ms fade-ins/fade-outs." },
+  { id: 5, cat: "Phase & Polarity", term: "Comb Filtering", def: "Regular notches and peaks in the frequency spectrum caused by summing a signal with a slightly delayed copy of itself.", ex: "Exam use: Causes thin, hollow bass when DI and mic'd amp tracks are not time-aligned." },
+  { id: 6, cat: "Phase & Polarity", term: "Polarity Inversion (\u00D8 / 180\u00B0)", def: "Flipping a waveform's positive and negative voltage values across all frequencies without shifting it in time.", ex: "Exam use: Fixes opposite-facing mics such as Snare Top vs. Snare Bottom." },
+  { id: 7, cat: "Phase & Polarity", term: "Sample-Accurate Alignment", def: "Nudging an earlier audio track later (or a later track earlier) by exact samples/milliseconds so initial transients peak together.", ex: "Exam use: Aligning Bass DI (0 ms) with Bass Amp Mic (+2 ms) restores +6 dB low-end weight." },
+  { id: 8, cat: "Phase & Polarity", term: "3:1 Mic Placement Rule", def: "To minimise phase cancellation, the distance between two mics should be at least 3x the distance from each mic to its source.", ex: "Exam use: Reduces bleed-induced comb filtering on multi-mic drum kits." },
+  { id: 9, cat: "Time & Pitch", term: "Transient Detection", def: "Identifying sharp, high-amplitude onset peaks (such as drum hits) to place Flex/Warp markers for timing edits.", ex: "Exam use: Used to quantise loose live drums to the project BPM grid." },
+  { id: 10, cat: "Time & Pitch", term: "Rhythmic / Slicing Mode", def: "A time-correction algorithm that slices audio at transients and shifts regions without stretching the attack.", ex: "Exam use: Best for drums/percussion; avoids pre-echo and transient smearing." },
+  { id: 11, cat: "Time & Pitch", term: "Formant Preservation", def: "Keeping the fixed resonant frequencies of a vocal tract or instrument body unchanged while shifting fundamental pitch.", ex: "Exam use: Prevents unnatural 'chipmunk' or 'monster' timbre during Melodyne/VariAudio pitch correction." },
+  { id: 12, cat: "Time & Pitch", term: "Pitch Drift vs. Pitch Centre", def: "Pitch Centre corrects average note tuning; Pitch Drift controls natural vibrato and expressive pitch variation.", ex: "Exam use: Over-flattening pitch drift creates an artificial, robotic pop vocal effect." },
+  { id: 13, cat: "AoS 2 & 3 Theory", term: "Non-Destructive Editing", def: "DAW edits (trims, fades, Flex markers) that store playback pointers without altering the original WAV/AIFF file on disk.", ex: "Exam use: Allows unlimited undo; contrast with destructive tape splicing or file-editor Normalise." },
+  { id: 14, cat: "AoS 2 & 3 Theory", term: "Varispeed vs. Time-Stretching", def: "Varispeed changes playback speed and pitch together; time-stretching decouples duration and pitch via FFT/granular algorithms.", ex: "Exam use: Doubling tape speed raises pitch by +1 octave (+12 semitones)." },
+  { id: 15, cat: "AoS 2 & 3 Theory", term: "Tape Splicing (AoS 3)", def: "Destructive analogue editing using a chinagraph pencil, 45\u00B0/90\u00B0 splicing block, razor blade, and splicing tape.", ex: "Exam use: A 45\u00B0 diagonal razor cut acted as a physical crossfade to prevent clicks." },
+  { id: 16, cat: "AoS 2 & 3 Theory", term: "Dither", def: "Low-level random noise added when reducing bit depth (e.g., 24-bit down to 16-bit) to mask quantisation distortion.", ex: "Exam use: Apply once at the final bounce/export stage when delivering 16-bit CD-quality WAVs." }
+];
+
+let deck = [...CARDS];
+let idx = 0;
+let mastered = new Set();
+let streak = 0;
+
+function render() {
+  const c = deck[idx];
+  document.getElementById('card3d').classList.remove('flipped');
+  document.getElementById('frontCat').textContent = c.cat;
+  document.getElementById('backCat').textContent = c.cat;
+  document.getElementById('frontTerm').textContent = c.term;
+  document.getElementById('backDef').textContent = c.def;
+  document.getElementById('backEx').textContent = c.ex;
+  document.getElementById('lblCount').textContent = `Card ${idx + 1} of ${deck.length}`;
+  const pct = (mastered.size / CARDS.length) * 100;
+  document.getElementById('barFill').style.width = pct + '%';
+  document.getElementById('lblScore').textContent = `Mastered: ${mastered.size} / ${CARDS.length} \u2022 Streak: ${streak}`;
+}
+
+function flipCard() { document.getElementById('card3d').classList.toggle('flipped'); }
+function nextCard() { idx = (idx + 1) % deck.length; render(); }
+function prevCard() { idx = (idx - 1 + deck.length) % deck.length; render(); }
+
+function markCard(gotIt) {
+  const c = deck[idx];
+  if (gotIt) { mastered.add(c.id); streak++; }
+  else { mastered.delete(c.id); streak = 0; }
+  nextCard();
+}
+
+function setCat(cat, btn) {
+  document.querySelectorAll('.toolbar .pill-row:first-child .btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  deck = cat === 'All' ? [...CARDS] : CARDS.filter(c => c.cat === cat);
+  idx = 0;
+  render();
+}
+
+function shuffleDeck() {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  idx = 0;
+  render();
+}
+
+function resetProgress() {
+  mastered.clear();
+  streak = 0;
+  idx = 0;
+  render();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') { e.preventDefault(); flipCard(); }
+  else if (e.code === 'ArrowRight') nextCard();
+  else if (e.code === 'ArrowLeft') prevCard();
+});
+
+render();
+</script>
+</body>
+</html>
