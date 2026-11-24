@@ -22,8 +22,8 @@ Live site: **https://audioediting.rjcaudio.co.uk**
 
 ## Deployment
 
-Deployed to Cloudflare Pages (`audio-editing`) and served at `https://audioediting.rjcaudio.co.uk`:
+Deployed to Cloudflare Workers Static Assets (`audio-editing`) and served at `https://audioediting.rjcaudio.co.uk`:
 
 ```bash
-npx wrangler pages deploy public --project-name=audio-editing
+npx wrangler deploy
 ```
