@@ -456,21 +456,31 @@
     <!-- LAB B: PHASE ALIGNMENT -->
     <div id="labPhase" class="lab-grid" style="display:none;">
       <div class="panel">
-        <h3>Summed Multi-Mic Waveform (Mic 1 + Mic 2)</h3>
-        <canvas id="phaseCanvas" class="scope" width="540" height="200"></canvas>
+        <h3>Summed Multi-Mic Waveform &amp; Comb Filter Spectrum</h3>
+        <canvas id="phaseCanvas" class="scope" width="540" height="150"></canvas>
+        <canvas id="combCanvas" class="scope" width="540" height="110" style="height:110px; margin-bottom:12px;"></canvas>
         <div class="pill-row">
-          <button class="btn btn-primary" onclick="playPhaseDemo()">Play Summed Tone</button>
+          <button class="btn btn-primary" onclick="playPhaseDemo()">Play Summed Sound</button>
           <button class="btn" id="btnPolarity" onclick="togglePolarity()">Polarity Invert Mic 2: OFF</button>
         </div>
       </div>
       <div class="panel">
-        <h3>Time-of-Arrival / Sample Delay</h3>
+        <h3>Sound Source &amp; Time-of-Arrival Delay</h3>
         <div class="control-row">
-          <label><span>Mic 2 Delay Offset</span><span id="lblDelay">1.14 ms (180&deg; @ 440 Hz)</span></label>
-          <input type="range" id="rngDelay" min="0" max="2.27" step="0.01" value="1.14" oninput="updatePhaseLab()" />
+          <label><span>Harmonically Rich Source</span><span id="lblSource">Snare Drum</span></label>
+          <div class="pill-row" style="margin:2px 0;">
+            <button class="btn active" id="srcSnare" onclick="setPhaseSource('snare', 'Snare Drum', this)">Snare Drum</button>
+            <button class="btn" id="srcKick" onclick="setPhaseSource('kick', 'Kick Drum', this)">Kick Drum</button>
+            <button class="btn" id="srcChords" onclick="setPhaseSource('chords', 'Synth Chords', this)">Synth Chords</button>
+            <button class="btn" id="srcBass" onclick="setPhaseSource('bass', 'Saw Bass', this)">Saw Bass</button>
+          </div>
+        </div>
+        <div class="control-row">
+          <label><span>Mic 2 Delay Offset</span><span id="lblDelay">1.50 ms (72 samples @ 48 kHz)</span></label>
+          <input type="range" id="rngDelay" min="0" max="8.00" step="0.05" value="1.50" oninput="updatePhaseLab()" />
         </div>
         <div id="phaseCallout" class="callout warn">
-          <strong>Destructive Interference:</strong> A half-wavelength delay (<code>1.14 ms</code> at 440 Hz) puts Mic 2 <strong>180&deg; out of phase</strong>, cancelling the fundamental and creating hollow <strong>comb filtering</strong>. Nudge to <code>0 ms</code> or invert polarity!
+          <strong>Comb Filtering Active:</strong> Delaying Mic 2 by <code>1.50 ms</code> creates deep cancellation notches starting at <code>333 Hz</code>. Sweep the slider to hear the hollow metallic comb-filter notches move!
         </div>
       </div>
     </div>
@@ -837,6 +847,16 @@ function playSpliceDemo() {
 
 // Lab B: Phase Alignment & Comb Filtering
 let invertPolarity = false;
+let phaseSource = 'snare';
+
+function setPhaseSource(src, label, btn) {
+  phaseSource = src;
+  document.getElementById('lblSource').textContent = label;
+  ['srcSnare', 'srcKick', 'srcChords', 'srcBass'].forEach(id => document.getElementById(id).classList.remove('active'));
+  btn.classList.add('active');
+  updatePhaseLab();
+}
+
 function togglePolarity() {
   invertPolarity = !invertPolarity;
   const btn = document.getElementById('btnPolarity');
@@ -845,79 +865,154 @@ function togglePolarity() {
   updatePhaseLab();
 }
 
+function richSample(tSec, src, noiseVal) {
+  if (tSec < 0) return 0;
+  if (src === 'snare') {
+    const body = Math.sin(2 * Math.PI * 195 * tSec) * Math.exp(-tSec * 24) * 0.55;
+    const wires = noiseVal * Math.exp(-tSec * 14) * 0.55;
+    return body + wires;
+  }
+  if (src === 'kick') {
+    const f = 52 + 120 * Math.exp(-tSec * 38);
+    const sub = Math.sin(2 * Math.PI * f * tSec) * Math.exp(-tSec * 8) * 0.85;
+    const click = (Math.sin(2 * Math.PI * 2400 * tSec) + noiseVal * 0.5) * Math.exp(-tSec * 90) * 0.25;
+    return sub + click;
+  }
+  if (src === 'chords') {
+    // Rich saw-like C minor 7th chord (harmonics 1..5)
+    const freqs = [130.81, 155.56, 196.00, 233.08];
+    let sum = 0;
+    for (let i = 0; i < freqs.length; i++) {
+      const f = freqs[i];
+      for (let h = 1; h <= 5; h++) {
+        sum += (1 / h) * Math.sin(2 * Math.PI * f * h * tSec);
+      }
+    }
+    return sum * 0.14;
+  }
+  // Saw Bass (A1 = 55 Hz, harmonics 1..8)
+  let bass = 0;
+  for (let h = 1; h <= 8; h++) {
+    bass += (1 / h) * Math.sin(2 * Math.PI * 55 * h * tSec);
+  }
+  return bass * 0.48;
+}
+
 function updatePhaseLab() {
   const delayMs = Number(document.getElementById('rngDelay').value);
-  const freq = 440;
-  const periodMs = 1000 / freq; // 2.2727 ms
-  const phaseDeg = Math.round(((delayMs / periodMs) * 360 + (invertPolarity ? 180 : 0)) % 360);
-  document.getElementById('lblDelay').textContent = `${delayMs.toFixed(2)} ms (${phaseDeg}\u00B0 @ 440 Hz)`;
+  const samples48 = Math.round(delayMs * 48);
+  document.getElementById('lblDelay').textContent = `${delayMs.toFixed(2)} ms (${samples48} samples @ 48 kHz)`;
 
   const callout = document.getElementById('phaseCallout');
-  const distFrom180 = Math.abs(phaseDeg - 180);
-  if (distFrom180 < 35) {
+  const pol = invertPolarity ? -1 : 1;
+
+  if (delayMs <= 0.05 && !invertPolarity) {
+    callout.className = 'callout';
+    callout.innerHTML = '<strong>Phase Coherent (0.00 ms):</strong> Mic 1 and Mic 2 sum constructively (+6 dB) across the entire frequency spectrum with zero comb-filter notches.';
+  } else if (delayMs <= 0.05 && invertPolarity) {
     callout.className = 'callout warn';
-    callout.innerHTML = `<strong>Destructive Interference (${phaseDeg}&deg;):</strong> Mic 1 and Mic 2 are nearly opposite in phase, causing severe cancellation at 440 Hz and thin <strong>comb filtering</strong>.`;
-  } else if (phaseDeg < 25 || phaseDeg > 335) {
-    callout.className = 'callout';
-    callout.innerHTML = `<strong>Phase Coherent (${phaseDeg}&deg;):</strong> Mic 1 and Mic 2 reinforce each other cleanly (+6 dB coherent sum) with full low-mid body.`;
+    callout.innerHTML = '<strong>Complete Polarity Cancellation:</strong> At <code>0.00 ms</code> with <strong>180&deg; Polarity Invert ON</strong>, Mic 1 and Mic 2 cancel completely across all frequencies!';
   } else {
-    callout.className = 'callout';
-    callout.innerHTML = `<strong>Partial Phase Shift (${phaseDeg}&deg;):</strong> Some constructive/destructive interference across harmonics. Align transients to <code>0&deg;</code> for maximum punch.`;
+    const firstNotchHz = invertPolarity ? Math.round(1000 / delayMs) : Math.round(500 / delayMs);
+    callout.className = 'callout warn';
+    callout.innerHTML = `<strong>Comb Filtering Active (${delayMs.toFixed(2)} ms):</strong> Creates repeating cancellation notches starting at <code>${firstNotchHz} Hz</code>, giving a hollow/metallic timbre. Align to <code>0.00 ms</code> to restore full weight!`;
   }
 
+  // 1. Time-domain waveform canvas
   const canvas = document.getElementById('phaseCanvas');
   const ctx = canvas.getContext('2d');
   const w = canvas.width, h = canvas.height, mid = h / 2;
   ctx.clearRect(0, 0, w, h);
-
-  ctx.strokeStyle = '#334155';
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = '#334155'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(w, mid); ctx.stroke();
 
-  const shiftRad = (delayMs / periodMs) * 2 * Math.PI;
-  const pol = invertPolarity ? -1 : 1;
+  const winSec = phaseSource === 'chords' || phaseSource === 'bass' ? 0.025 : 0.018;
+  const delaySec = delayMs / 1000;
 
-  // Mic 1 (faint)
-  ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
-  ctx.lineWidth = 1.5;
+  // Deterministic pseudo-noise for crisp static waveform preview
+  const pseudoNoise = (idx) => Math.sin(idx * 12.9898) * 0.6 + Math.cos(idx * 78.233) * 0.4;
+
+  // Mic 1 faint
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)'; ctx.lineWidth = 1.4;
   ctx.beginPath();
   for (let x = 0; x < w; x++) {
-    const py = mid - Math.sin(x * 0.05) * (h * 0.18);
+    const t = (x / w) * winSec;
+    const py = mid - richSample(t, phaseSource, pseudoNoise(x)) * (h * 0.28);
     if (x === 0) ctx.moveTo(x, py); else ctx.lineTo(x, py);
   }
   ctx.stroke();
 
   // Summed
-  ctx.strokeStyle = distFrom180 < 35 ? '#f87171' : '#34d399';
-  ctx.lineWidth = 2.8;
+  ctx.strokeStyle = (delayMs <= 0.05 && !invertPolarity) ? '#34d399' : '#f87171';
+  ctx.lineWidth = 2.4;
   ctx.beginPath();
   for (let x = 0; x < w; x++) {
-    const m1 = Math.sin(x * 0.05);
-    const m2 = pol * Math.sin(x * 0.05 - shiftRad);
-    const py = mid - (m1 + m2) * (h * 0.19);
+    const t = (x / w) * winSec;
+    const m1 = richSample(t, phaseSource, pseudoNoise(x));
+    const m2 = pol * richSample(t - delaySec, phaseSource, pseudoNoise(x - Math.round((delaySec / winSec) * w)));
+    const py = mid - (m1 + m2) * (h * 0.24);
     if (x === 0) ctx.moveTo(x, py); else ctx.lineTo(x, py);
   }
   ctx.stroke();
+
+  // 2. Comb-filter frequency response canvas (50 Hz - 4000 Hz)
+  const cc = document.getElementById('combCanvas');
+  const cctx = cc.getContext('2d');
+  const cw = cc.width, ch = cc.height;
+  cctx.clearRect(0, 0, cw, ch);
+
+  const zeroY = ch * 0.3;
+  cctx.strokeStyle = '#334155'; cctx.lineWidth = 1;
+  cctx.beginPath(); cctx.moveTo(0, zeroY); cctx.lineTo(cw, zeroY); cctx.stroke();
+
+  cctx.fillStyle = '#94a3b8'; cctx.font = '10.5px sans-serif';
+  [100, 250, 500, 1000, 2000, 4000].forEach(f => {
+    const lx = ((Math.log10(f) - Math.log10(50)) / (Math.log10(4000) - Math.log10(50))) * cw;
+    cctx.fillText(f >= 1000 ? (f / 1000) + 'k' : f + '', lx - 8, ch - 5);
+  });
+
+  cctx.strokeStyle = (delayMs <= 0.05 && !invertPolarity) ? '#34d399' : '#fbbf24';
+  cctx.lineWidth = 2.2;
+  cctx.beginPath();
+  for (let x = 0; x < cw; x++) {
+    const logF = Math.log10(50) + (x / cw) * (Math.log10(4000) - Math.log10(50));
+    const f = Math.pow(10, logF);
+    const phase = 2 * Math.PI * f * delaySec;
+    const mag = Math.sqrt(2 + 2 * pol * Math.cos(phase)) / 2;
+    const db = 20 * Math.log10(Math.max(0.03, mag));
+    const py = zeroY - (db / 30) * (ch * 0.55);
+    if (x === 0) cctx.moveTo(x, py); else cctx.lineTo(x, py);
+  }
+  cctx.stroke();
 }
 
 function playPhaseDemo() {
   ensureAudio();
   const delayMs = Number(document.getElementById('rngDelay').value);
   const sr = audioCtx.sampleRate;
-  const dur = 0.6;
-  const buf = audioCtx.createBuffer(1, Math.floor(sr * dur), sr);
+  const dur = phaseSource === 'chords' || phaseSource === 'bass' ? 0.9 : 0.45;
+  const len = Math.floor(sr * dur);
+  const buf = audioCtx.createBuffer(1, len, sr);
   const data = buf.getChannelData(0);
-  const freq = 440;
-  const delaySec = delayMs / 1000;
+  const delaySamples = Math.round((delayMs / 1000) * sr);
   const pol = invertPolarity ? -1 : 1;
 
-  for (let i = 0; i < data.length; i++) {
+  // Pre-generate deterministic dry signal so Mic 2 is an exact delayed copy
+  const dry = new Float32Array(len);
+  for (let i = 0; i < len; i++) {
     const t = i / sr;
-    const env = Math.min(1, t * 40) * Math.min(1, (dur - t) * 40);
-    const m1 = Math.sin(2 * Math.PI * freq * t);
-    const m2 = pol * Math.sin(2 * Math.PI * freq * (t - delaySec));
-    data[i] = (m1 + m2) * 0.22 * env;
+    const env = phaseSource === 'chords' || phaseSource === 'bass'
+      ? Math.min(1, t * 50) * Math.min(1, (dur - t) * 20)
+      : 1;
+    dry[i] = richSample(t, phaseSource, Math.random() * 2 - 1) * env;
   }
+
+  for (let i = 0; i < len; i++) {
+    const m1 = dry[i];
+    const m2 = i >= delaySamples ? pol * dry[i - delaySamples] : 0;
+    data[i] = (m1 + m2) * 0.3;
+  }
+
   const src = audioCtx.createBufferSource();
   src.buffer = buf;
   src.connect(audioCtx.destination);
