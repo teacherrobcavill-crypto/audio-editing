@@ -89,9 +89,10 @@
         </div>
         <canvas id="drumCanvas" class="scope" width="560" height="210"></canvas>
         <div class="pill-row">
-          <button class="btn btn-primary" onclick="playSnare('sum')">Play Summed Snare</button>
-          <button class="btn" onclick="playSnare('m1')">Solo Mic 1</button>
-          <button class="btn" onclick="playSnare('m2')">Solo Mic 2</button>
+          <button class="btn btn-primary" onclick="lastPlayMode='sum'; playSnare('sum')">Play Summed [Space / P]</button>
+          <button class="btn" onclick="lastPlayMode='m1'; playSnare('m1')">Solo Mic 1</button>
+          <button class="btn" onclick="lastPlayMode='m2'; playSnare('m2')">Solo Mic 2</button>
+          <button class="btn" id="btnLoop" onclick="toggleLoop()">Loop: OFF [L]</button>
         </div>
       </div>
 
@@ -271,6 +272,38 @@ function solveDrum() {
   updateDrum();
   checkDrum();
 }
+
+let lastPlayMode = 'sum';
+let isLooping = false;
+let loopTimer = null;
+
+function toggleLoop() {
+  isLooping = !isLooping;
+  const b = document.getElementById('btnLoop');
+  b.textContent = `Loop: ${isLooping ? 'ON' : 'OFF'} [L]`;
+  b.classList.toggle('active', isLooping);
+  if (isLooping) scheduleLoop();
+  else if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; }
+}
+
+function scheduleLoop() {
+  if (loopTimer) clearTimeout(loopTimer);
+  if (!isLooping) return;
+  playSnare(lastPlayMode);
+  loopTimer = setTimeout(scheduleLoop, 520);
+}
+
+document.addEventListener('keydown', (e) => {
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' && e.target.type !== 'range') return;
+  if (e.code === 'Space' || e.key === 'p' || e.key === 'P') {
+    e.preventDefault();
+    playSnare(lastPlayMode);
+  } else if (e.key === 'l' || e.key === 'L') {
+    e.preventDefault();
+    toggleLoop();
+  }
+});
 
 setMode('snare');
 </script>

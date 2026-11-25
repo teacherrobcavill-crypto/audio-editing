@@ -82,8 +82,9 @@
         <h3>Pitch-Trace Piano Roll (Grey = Original, Cyan = Corrected)</h3>
         <canvas id="pitchCanvas" class="scope" width="560" height="220"></canvas>
         <div class="pill-row">
-          <button class="btn btn-primary" onclick="playVocal(true)">Play Corrected Vocal</button>
-          <button class="btn" onclick="playVocal(false)">Play Original (Untuned)</button>
+          <button class="btn btn-primary" onclick="lastPlayCorrected=true; playVocal(true)">Play Corrected [Space / P]</button>
+          <button class="btn" onclick="lastPlayCorrected=false; playVocal(false)">Play Original (Untuned)</button>
+          <button class="btn" id="btnLoop" onclick="toggleLoop()">Loop: OFF [L]</button>
         </div>
       </div>
 
@@ -331,6 +332,38 @@ function checkPitchTask() {
     }
   }
 }
+
+let lastPlayCorrected = true;
+let isLooping = false;
+let loopTimer = null;
+
+function toggleLoop() {
+  isLooping = !isLooping;
+  const b = document.getElementById('btnLoop');
+  b.textContent = `Loop: ${isLooping ? 'ON' : 'OFF'} [L]`;
+  b.classList.toggle('active', isLooping);
+  if (isLooping) scheduleLoop();
+  else if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; }
+}
+
+function scheduleLoop() {
+  if (loopTimer) clearTimeout(loopTimer);
+  if (!isLooping) return;
+  playVocal(lastPlayCorrected);
+  loopTimer = setTimeout(scheduleLoop, 1750);
+}
+
+document.addEventListener('keydown', (e) => {
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' && e.target.type !== 'range') return;
+  if (e.code === 'Space' || e.key === 'p' || e.key === 'P') {
+    e.preventDefault();
+    playVocal(lastPlayCorrected);
+  } else if (e.key === 'l' || e.key === 'L') {
+    e.preventDefault();
+    toggleLoop();
+  }
+});
 
 setTask('A');
 </script>

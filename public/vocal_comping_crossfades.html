@@ -90,7 +90,8 @@
         <h3>Splice Boundary Zoom (Phrase 1 &rarr; Phrase 2)</h3>
         <canvas id="compCanvas" class="scope" width="540" height="200"></canvas>
         <div class="pill-row">
-          <button class="btn btn-primary" onclick="playComp()">Play Comped Splice</button>
+          <button class="btn btn-primary" onclick="playComp()">Play Comped Splice [Space / P]</button>
+          <button class="btn" id="btnLoop" onclick="toggleLoop()">Loop: OFF [L]</button>
         </div>
       </div>
 
@@ -267,6 +268,37 @@ function solveComp() {
   updateComp();
   checkComp();
 }
+
+let isLooping = false;
+let loopTimer = null;
+
+function toggleLoop() {
+  isLooping = !isLooping;
+  const b = document.getElementById('btnLoop');
+  b.textContent = `Loop: ${isLooping ? 'ON' : 'OFF'} [L]`;
+  b.classList.toggle('active', isLooping);
+  if (isLooping) scheduleLoop();
+  else if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; }
+}
+
+function scheduleLoop() {
+  if (loopTimer) clearTimeout(loopTimer);
+  if (!isLooping) return;
+  playComp();
+  loopTimer = setTimeout(scheduleLoop, 800);
+}
+
+document.addEventListener('keydown', (e) => {
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' && e.target.type !== 'range') return;
+  if (e.code === 'Space' || e.key === 'p' || e.key === 'P') {
+    e.preventDefault();
+    playComp();
+  } else if (e.key === 'l' || e.key === 'L') {
+    e.preventDefault();
+    toggleLoop();
+  }
+});
 
 updateComp();
 </script>

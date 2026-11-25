@@ -399,9 +399,10 @@
         <canvas id="freqCanvas" class="freq" width="560" height="155"></canvas>
 
         <div class="pill-row">
-          <button class="btn btn-primary" onclick="playBass('sum')">Play Summed (DI + Amp)</button>
-          <button class="btn" onclick="playBass('di')">Solo DI</button>
-          <button class="btn" onclick="playBass('amp')">Solo Amp</button>
+          <button class="btn btn-primary" onclick="lastPlayMode='sum'; playBass('sum')">Play Summed [Space / P]</button>
+          <button class="btn" onclick="lastPlayMode='di'; playBass('di')">Solo DI</button>
+          <button class="btn" onclick="lastPlayMode='amp'; playBass('amp')">Solo Amp</button>
+          <button class="btn" id="btnLoop" onclick="toggleLoop()">Loop: OFF [L]</button>
         </div>
       </div>
 
@@ -778,6 +779,38 @@ function revealSolution() {
   updateLab();
   checkAlignment();
 }
+
+let lastPlayMode = 'sum';
+let isLooping = false;
+let loopTimer = null;
+
+function toggleLoop() {
+  isLooping = !isLooping;
+  const b = document.getElementById('btnLoop');
+  b.textContent = `Loop: ${isLooping ? 'ON' : 'OFF'} [L]`;
+  b.classList.toggle('active', isLooping);
+  if (isLooping) scheduleLoop();
+  else if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; }
+}
+
+function scheduleLoop() {
+  if (loopTimer) clearTimeout(loopTimer);
+  if (!isLooping) return;
+  playBass(lastPlayMode);
+  loopTimer = setTimeout(scheduleLoop, 900);
+}
+
+document.addEventListener('keydown', (e) => {
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' && e.target.type !== 'range') return;
+  if (e.code === 'Space' || e.key === 'p' || e.key === 'P') {
+    e.preventDefault();
+    playBass(lastPlayMode);
+  } else if (e.key === 'l' || e.key === 'L') {
+    e.preventDefault();
+    toggleLoop();
+  }
+});
 
 // Init
 loadScenario('A');
