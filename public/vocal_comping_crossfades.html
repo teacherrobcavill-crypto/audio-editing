@@ -173,12 +173,19 @@ let animFrame = null;
 let isSwiping = false;
 let audioCtx = null;
 
-async function ensureAudio() {
+function ensureAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state !== 'running') {
-    await audioCtx.resume();
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
   }
+  // Unlock WebKit/Safari audio synchronously inside user gesture
+  const b = audioCtx.createBuffer(1, 1, 22050);
+  const s = audioCtx.createBufferSource();
+  s.buffer = b;
+  s.connect(audioCtx.destination);
+  s.start(0);
 }
+document.addEventListener('pointerdown', () => { if (!audioCtx || audioCtx.state === 'suspended') ensureAudio(); }, { once: false });
 
 function buildLanes() {
   const container = document.getElementById('takeLanes');
@@ -282,8 +289,8 @@ function scheduleLoop() {
   loopTimer = setTimeout(scheduleLoop, 4000); // 4 bars at 120 BPM? Wait: 4 beats/bar * 0.25s = 1s/bar -> 4s total!
 }
 
-async function playCompAudio() {
-  await ensureAudio();
+function playCompAudio() {
+  ensureAudio();
   // 120 BPM eighth-note feel: 1 beat = 0.25s -> 1 bar = 1.0s, 4 bars = 4.0s
   const beatDur = 0.25;
   const now = audioCtx.currentTime + 0.05;
