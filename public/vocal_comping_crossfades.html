@@ -95,6 +95,7 @@
       <button class="btn" id="btnLoop" onclick="toggleLoop()">Loop: OFF [L]</button>
       <button class="btn active" id="btnClick" onclick="toggleClick()">Click: ON [C]</button>
       <button class="btn" onclick="resetComp()">Reset Comp</button>
+      <span id="audioStatus" style="margin-left:auto; font-size:12px; font-weight:700; color:var(--muted);">Audio: idle</span>
     </div>
 
     <div class="daw-wrap">
@@ -173,10 +174,20 @@ let animFrame = null;
 let isSwiping = false;
 let audioCtx = null;
 
+function updateAudioStatus() {
+  const el = document.getElementById('audioStatus');
+  if (!el || !audioCtx) return;
+  el.textContent = `Audio: ${audioCtx.state} (${audioCtx.currentTime.toFixed(1)}s)`;
+  el.style.color = audioCtx.state === 'running' ? '#16a34a' : '#dc2626';
+}
+
 function ensureAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx.onstatechange = updateAudioStatus;
+  }
+  if (audioCtx.state !== 'running') {
+    audioCtx.resume().then(updateAudioStatus).catch(() => {});
   }
   // Unlock WebKit/Safari audio synchronously inside user gesture
   const b = audioCtx.createBuffer(1, 1, 22050);
@@ -184,8 +195,9 @@ function ensureAudio() {
   s.buffer = b;
   s.connect(audioCtx.destination);
   s.start(0);
+  updateAudioStatus();
 }
-document.addEventListener('pointerdown', () => { if (!audioCtx || audioCtx.state === 'suspended') ensureAudio(); }, { once: false });
+document.addEventListener('pointerdown', () => { if (!audioCtx || audioCtx.state !== 'running') ensureAudio(); }, { once: false });
 
 function buildLanes() {
   const container = document.getElementById('takeLanes');

@@ -570,7 +570,7 @@ let audioCtx = null;
 
 function ensureAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (audioCtx.state !== 'running') audioCtx.resume();
 }
 
 function loadScenario(key) {
