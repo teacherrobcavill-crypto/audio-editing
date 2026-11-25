@@ -258,21 +258,51 @@ function renderAllCells() {
       cell.classList.toggle('selected', chosen === t);
       const cvs = cell.querySelector('canvas');
       const ctx = cvs.getContext('2d');
-      const w = cvs.width, h = cvs.height;
+      const w = cvs.width, h = cvs.height, mid = h / 2;
       ctx.clearRect(0, 0, w, h);
 
-      // Draw 4 beat grid lines
+      // Subtle centre zero-line
+      ctx.strokeStyle = 'rgba(148,163,184,0.22)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(w, mid); ctx.stroke();
+
+      // Draw 4 beat grid lines + realistic mirrored DAW waveforms
+      const waveColor = chosen === t ? TAKE_COLORS[t] : 'rgba(148,163,184,0.6)';
       for (let beat = 0; beat < 4; beat++) {
         const gx = (beat / 4) * w + 14;
-        ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+        ctx.strokeStyle = 'rgba(148,163,184,0.35)';
         ctx.setLineDash([3,3]);
-        ctx.beginPath(); ctx.moveTo(gx, 4); ctx.lineTo(gx, h - 4); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(gx, 3); ctx.lineTo(gx, h - 3); ctx.stroke();
         ctx.setLineDash([]);
 
         const offMs = OFFSETS_MS[b][t][beat];
         const nx = gx + (offMs / 500) * (w / 4);
-        ctx.fillStyle = chosen === t ? TAKE_COLORS[t] : 'rgba(148,163,184,0.55)';
-        ctx.fillRect(nx - 2, 12, 22, h - 24);
+        const waveLen = Math.floor(w / 4) - 6;
+
+        // Draw mirrored audio waveform with sharp transient onset & exponential decay
+        ctx.strokeStyle = waveColor;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        for (let px = 0; px < waveLen; px++) {
+          const x = nx + px;
+          if (x < 0 || x > w) continue;
+          const norm = px / waveLen;
+          const env = (px < 2 ? (px + 1) / 2 : Math.exp(-norm * 3.8));
+          const cycles = 0.65 + (BAR_NOTES[b][beat] / 140) * 0.45;
+          const osc = 0.62 + 0.38 * Math.abs(Math.sin(px * cycles + b + beat));
+          const amp = env * osc * (h * 0.41);
+          ctx.moveTo(x, mid - amp);
+          ctx.lineTo(x, mid + amp);
+        }
+        ctx.stroke();
+
+        // Crisp transient onset tick
+        ctx.strokeStyle = chosen === t ? '#f8fafc' : 'rgba(226,232,240,0.45)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(nx, mid - h * 0.38);
+        ctx.lineTo(nx, mid + h * 0.38);
+        ctx.stroke();
       }
     }
   }
