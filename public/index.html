@@ -460,7 +460,8 @@
         <canvas id="phaseCanvas" class="scope" width="540" height="150"></canvas>
         <canvas id="combCanvas" class="scope" width="540" height="110" style="height:110px; margin-bottom:12px;"></canvas>
         <div class="pill-row">
-          <button class="btn btn-primary" onclick="playPhaseDemo()">Play Summed Sound</button>
+          <button class="btn btn-primary" onclick="playPhaseDemo()">Play Summed Sound [Space / P]</button>
+          <button class="btn" id="btnLoop" onclick="togglePhaseLoop()">Loop: OFF [L]</button>
           <button class="btn" id="btnPolarity" onclick="togglePolarity()">Polarity Invert Mic 2: OFF</button>
         </div>
       </div>
@@ -848,6 +849,8 @@ function playSpliceDemo() {
 // Lab B: Phase Alignment & Comb Filtering
 let invertPolarity = false;
 let phaseSource = 'snare';
+let phaseLoop = false;
+let phaseLoopTimer = null;
 
 function setPhaseSource(src, label, btn) {
   phaseSource = src;
@@ -856,6 +859,40 @@ function setPhaseSource(src, label, btn) {
   btn.classList.add('active');
   updatePhaseLab();
 }
+
+function togglePhaseLoop() {
+  phaseLoop = !phaseLoop;
+  const btn = document.getElementById('btnLoop');
+  btn.textContent = `Loop: ${phaseLoop ? 'ON' : 'OFF'} [L]`;
+  btn.classList.toggle('active', phaseLoop);
+  if (phaseLoop) {
+    schedulePhaseLoop();
+  } else if (phaseLoopTimer) {
+    clearTimeout(phaseLoopTimer);
+    phaseLoopTimer = null;
+  }
+}
+
+function schedulePhaseLoop() {
+  if (phaseLoopTimer) clearTimeout(phaseLoopTimer);
+  if (!phaseLoop || currentLab !== 'phase') return;
+  playPhaseDemo();
+  const intervalMs = (phaseSource === 'chords' || phaseSource === 'bass') ? 850 : 520;
+  phaseLoopTimer = setTimeout(schedulePhaseLoop, intervalMs);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (currentLab !== 'phase') return;
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' && e.target.type !== 'range') return;
+  if (e.code === 'Space' || e.key === 'p' || e.key === 'P') {
+    e.preventDefault();
+    playPhaseDemo();
+  } else if (e.key === 'l' || e.key === 'L') {
+    e.preventDefault();
+    togglePhaseLoop();
+  }
+});
 
 function togglePolarity() {
   invertPolarity = !invertPolarity;
