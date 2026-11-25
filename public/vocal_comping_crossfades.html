@@ -173,9 +173,11 @@ let animFrame = null;
 let isSwiping = false;
 let audioCtx = null;
 
-function ensureAudio() {
+async function ensureAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (audioCtx.state !== 'running') {
+    await audioCtx.resume();
+  }
 }
 
 function buildLanes() {
@@ -280,11 +282,11 @@ function scheduleLoop() {
   loopTimer = setTimeout(scheduleLoop, 4000); // 4 bars at 120 BPM? Wait: 4 beats/bar * 0.25s = 1s/bar -> 4s total!
 }
 
-function playCompAudio() {
-  ensureAudio();
-  // 120 BPM, 16th/8th feel: 1 beat = 0.25s (240 BPM eighth feel -> 1 bar = 1.0s, 4 bars = 4.0s)
+async function playCompAudio() {
+  await ensureAudio();
+  // 120 BPM eighth-note feel: 1 beat = 0.25s -> 1 bar = 1.0s, 4 bars = 4.0s
   const beatDur = 0.25;
-  const now = audioCtx.currentTime + 0.04;
+  const now = audioCtx.currentTime + 0.05;
 
   for (let b = 0; b < 4; b++) {
     const activeTake = (soloTake !== null) ? soloTake : comp[b];
@@ -294,11 +296,13 @@ function playCompAudio() {
       // Metronome Click
       if (clickOn) {
         const co = audioCtx.createOscillator(), cg = audioCtx.createGain();
-        co.frequency.value = beat === 0 ? 1300 : 880;
-        cg.gain.setValueAtTime(0.14, gridTime);
-        cg.gain.exponentialRampToValueAtTime(0.001, gridTime + 0.03);
+        co.type = 'sine';
+        co.frequency.setValueAtTime(beat === 0 ? 1300 : 880, gridTime);
+        cg.gain.setValueAtTime(0.0001, gridTime);
+        cg.gain.linearRampToValueAtTime(0.16, gridTime + 0.003);
+        cg.gain.exponentialRampToValueAtTime(0.0001, gridTime + 0.035);
         co.connect(cg); cg.connect(audioCtx.destination);
-        co.start(gridTime); co.stop(gridTime + 0.035);
+        co.start(gridTime); co.stop(gridTime + 0.04);
       }
 
       // Synth patch note with take timing offset
@@ -308,14 +312,15 @@ function playCompAudio() {
       const f = audioCtx.createBiquadFilter();
       const g = audioCtx.createGain();
       o.type = 'sawtooth';
-      o.frequency.value = BAR_NOTES[b][beat];
+      o.frequency.setValueAtTime(BAR_NOTES[b][beat], noteTime);
       f.type = 'lowpass';
-      f.frequency.setValueAtTime(1600, noteTime);
-      f.frequency.exponentialRampToValueAtTime(320, noteTime + 0.18);
-      g.gain.setValueAtTime(0.24, noteTime);
-      g.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.21);
+      f.frequency.setValueAtTime(1800, noteTime);
+      f.frequency.exponentialRampToValueAtTime(320, noteTime + 0.19);
+      g.gain.setValueAtTime(0.0001, noteTime);
+      g.gain.linearRampToValueAtTime(0.28, noteTime + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.22);
       o.connect(f); f.connect(g); g.connect(audioCtx.destination);
-      o.start(noteTime); o.stop(noteTime + 0.22);
+      o.start(noteTime); o.stop(noteTime + 0.23);
     }
   }
 
